@@ -49,57 +49,57 @@ export default function LandingPage({ onOpenAuth }) {
   const [activePreviewTab, setActivePreviewTab] = useState('dashboard');
   const [demoModalOpen, setDemoModalOpen] = useState(false);
 
-  // 10 Core Features
+  // 10 Core Features (Simple Everyday Language)
   const features = [
     {
       icon: Briefcase,
       title: 'Project Management',
-      description: 'Milestone tracking, budget burn rates, sprint completion metrics, and portfolio governance.'
+      description: 'Track project progress, budgets, deadlines, and deliverables with ease.'
     },
     {
       icon: Users,
-      title: 'Client Management',
-      description: 'Centralized client directory, account profiles, GST tax IDs, billing histories, and contracts.'
+      title: 'Client Directory',
+      description: 'Keep all your client contacts, details, notes, and billing history in one place.'
     },
     {
       icon: CheckSquare,
-      title: 'Task Management',
-      description: 'Interactive 4-column drag-and-drop Kanban boards, subtask checklists, and priority badges.'
+      title: 'Task Boards',
+      description: 'Simple to-do lists and visual boards to help your team get work done faster.'
     },
     {
       icon: UserCheck,
       title: 'Team Management',
-      description: 'Granular department organization, workload allocation, member designations, and permissions.'
+      description: 'See who is doing what, invite team members, and assign simple roles.'
     },
     {
       icon: FileText,
-      title: 'Invoice Management',
-      description: 'Automated GST tax calculations, discounts, payment status tracking, and instant client PDF exports.'
+      title: 'Invoices & Billing',
+      description: 'Create clean bills, track payments, calculate taxes, and download PDF invoices.'
     },
     {
       icon: FolderGit2,
-      title: 'File Management',
-      description: 'Encrypted cloud storage vault, file versioning, document tagging, and asset sharing per project.'
+      title: 'Files & Documents',
+      description: 'Save, organize, and share documents and project files safely.'
     },
     {
       icon: Calendar,
       title: 'Calendar & Schedule',
-      description: 'Unified team schedule, deadline tracking, milestone calendars, and event synchronization.'
+      description: 'A clear team calendar so you never miss a due date or milestone.'
     },
     {
       icon: BarChart3,
-      title: 'Reports & Analytics',
-      description: 'Portfolio revenue trends, team utilization rates, project burn charts, and executive analytics.'
+      title: 'Reports & Numbers',
+      description: 'Easy-to-read charts showing your income, completed tasks, and work hours.'
     },
     {
       icon: Bell,
-      title: 'Real-Time Notifications',
-      description: 'Instant task status alerts, deadline reminders, mention notifications, and system audit logs.'
+      title: 'Friendly Reminders',
+      description: 'Helpful alerts and deadline updates so everyone stays on the same page.'
     },
     {
       icon: Sparkles,
-      title: 'AI Productivity Tools',
-      description: 'Automated project health scoring, intelligent task estimation, and AI-powered meeting notes summaries.'
+      title: 'Smart Tools',
+      description: 'Helpful smart summaries and suggestions to save you time every day.'
     }
   ];
 
@@ -107,87 +107,87 @@ export default function LandingPage({ onOpenAuth }) {
   const workflowSteps = [
     {
       step: '01',
-      title: 'Create your organization',
-      desc: 'Set up a secure multi-tenant workspace with custom branding, department structures, and domain settings in under 60 seconds.'
+      title: 'Create your workspace',
+      desc: 'Set up your company space with your name and logo in less than a minute.'
     },
     {
       step: '02',
       title: 'Invite your team',
-      desc: 'Onboard administrators, project managers, developers, designers, and clients with granular role-based permissions.'
+      desc: 'Add your coworkers and assign simple roles like manager or member.'
     },
     {
       step: '03',
-      title: 'Manage projects and tasks',
-      desc: 'Organize workloads with Kanban boards, subtasks, deadline tracking, live time stopwatches, and file asset sharing.'
+      title: 'Add projects and tasks',
+      desc: 'Organize your daily work with easy-to-use lists, checklists, and due dates.'
     },
     {
       step: '04',
-      title: 'Track progress and deliver successfully',
-      desc: 'Monitor real-time AI health scores, export PDF invoices with GST calculations, review analytics, and ship projects on time.'
+      title: 'Deliver work & get paid',
+      desc: 'Send professional invoices, track hours, and keep your clients happy.'
     }
   ];
 
-  // AI Features
+  // Smart Tools (AI Features)
   const aiFeatures = [
     {
       icon: Sparkles,
-      title: 'AI Project Health Score (1–100)',
-      desc: 'Predictive health algorithm analyzing budget burn rates, sprint velocity, overdue tasks, and client milestone delivery risk in real time.'
+      title: 'Project Health Check',
+      desc: 'Quickly see if a project is running smoothly, on budget, and on track to finish on time.'
     },
     {
       icon: Cpu,
-      title: 'AI Task Estimation Engine',
-      desc: 'Smart effort forecasting engine that evaluates historical team completion times and task complexity to suggest realistic delivery estimates.'
+      title: 'Delivery Time Estimates',
+      desc: 'Helpful suggestions on how long tasks might take based on previous projects.'
     },
     {
       icon: FileText,
-      title: 'AI Meeting Notes Summary',
-      desc: 'Automated extraction of action items, key decisions, deadline assignments, and owner tags directly from raw meeting transcripts.'
+      title: 'Meeting Notes Summary',
+      desc: 'Turn long meeting notes into clean bullet points and clear action items automatically.'
     }
   ];
 
-  // Security Architecture Points
+  // Security Points
   const securityPoints = [
     {
       icon: Building2,
-      title: 'Organization Isolation',
-      desc: 'Strict logical database scoping ensuring complete tenant data boundaries and zero cross-organization data leakage.'
+      title: 'Private Workspace',
+      desc: 'Your company information is completely private to your team and never shared.'
     },
     {
       icon: Lock,
-      title: 'Secure JWT Authentication',
-      desc: 'Industry-standard OAuth 2.0 & JWT authentication, encrypted session tokens, and secure password reset workflows.'
+      title: 'Safe Sign In',
+      desc: 'Password protection and safe login keep your company account secure.'
     },
     {
       icon: ShieldCheck,
-      title: 'Role-Based Access Control (RBAC)',
-      desc: 'Multi-tier authorization covering Super Admin, Company Admin, Project Manager, Employee, and External Client roles.'
+      title: 'Simple Team Roles',
+      desc: 'Easily decide who can see invoices, edit projects, or add new tasks.'
     },
     {
       icon: Server,
-      title: 'Secure REST APIs',
-      desc: 'Hardened Express endpoints protected by Helmet security headers, CORS origin verification, and rate limiting.'
+      title: 'Protected Connections',
+      desc: 'All information is safely encrypted just like your modern online banking app.'
     },
     {
       icon: Activity,
-      title: 'System Activity Audit Logs',
-      desc: 'Comprehensive, immutable audit logs tracking user logins, account creation, permission edits, and financial events.'
+      title: 'Activity History',
+      desc: 'See a clear history of important updates made to projects and invoices.'
     },
     {
       icon: HardDrive,
-      title: 'Protected File Access',
-      desc: 'Encrypted document vault with restricted download tokens and permission checks per project attachment.'
+      title: 'Safe File Storage',
+      desc: 'Store contracts and attachments safely with secure download links.'
     }
   ];
 
   // Why Choose WorkForge Points
   const whyChoosePoints = [
-    'Modern, clean, and intuitive interface with zero learning curve',
-    'Secure multi-tenant architecture built for enterprise data privacy',
-    'Centralized portfolio governance across projects, clients, and billing',
-    'AI-assisted productivity tools that automate routine management tasks',
-    'Highly scalable infrastructure designed for growing organizations',
-    'Fully responsive layout optimized for desktop, tablet, and mobile'
+    'Clean, simple interface that anyone can use without special training',
+    'Private workspace designed to keep all your company data safe',
+    'Everything in one place: projects, clients, tasks, and billing',
+    'Smart tools that save you time on notes, reminders, and estimates',
+    'Works smoothly whether you have 2 people or 200 people',
+    'Looks great and works fast on your computer, tablet, or phone'
   ];
 
   // Pricing Plans (Rupee Currency ₹)
@@ -195,16 +195,16 @@ export default function LandingPage({ onOpenAuth }) {
     {
       id: 'starter',
       name: 'Starter Plan',
-      desc: 'Ideal for small agencies and boutique engineering teams.',
+      desc: 'Great for freelancers, small agencies, and new teams.',
       priceMonthly: 1499,
       priceAnnual: 1199,
       features: [
         'Up to 5 Team Members',
-        '10 Active Client Projects',
-        '10 GB Encrypted File Vault',
-        'Kanban Task Workflows',
-        'Basic Time Tracking & Invoices',
-        'Standard Email Support'
+        '10 Active Projects',
+        '10 GB File Storage',
+        'Visual Task Boards',
+        'Time Tracking & Invoices',
+        'Helpful Email Support'
       ],
       popular: false,
       buttonText: 'Start Free Trial'
@@ -212,17 +212,17 @@ export default function LandingPage({ onOpenAuth }) {
     {
       id: 'pro',
       name: 'Pro Plan',
-      desc: 'Engineered for growing digital agencies and software houses.',
+      desc: 'Best for growing companies and busy service teams.',
       priceMonthly: 4999,
       priceAnnual: 3999,
       features: [
         'Up to 25 Team Members',
-        'Unlimited Client Projects',
-        '100 GB Encrypted File Vault',
-        'AI Health Index & Risk Predictor',
-        'Instant PDF Invoice Export (GST)',
-        'Audit Trail & System Logs',
-        'Priority Technical Support'
+        'Unlimited Projects',
+        '100 GB File Storage',
+        'Smart Project Health Checks',
+        'Professional PDF Invoices (with GST)',
+        'Activity History & Logs',
+        'Priority Support'
       ],
       popular: true,
       buttonText: 'Create Workspace'
@@ -230,16 +230,16 @@ export default function LandingPage({ onOpenAuth }) {
     {
       id: 'enterprise',
       name: 'Enterprise Plan',
-      desc: 'Designed for large organizations requiring custom governance.',
+      desc: 'For larger companies that need custom limits and dedicated help.',
       priceMonthly: 14999,
       priceAnnual: 11999,
       features: [
-        'Unlimited Team Members & Orgs',
-        'Dedicated Cloud Storage Instance',
-        'Full AI Intelligence Suite Access',
-        'Custom Roles & RBAC Matrix',
-        '99.99% SLA & Dedicated Account Manager',
-        '24/7 Phone & API SLA Support'
+        'Unlimited Team Members',
+        'Unlimited File Storage',
+        'All Smart Tools Included',
+        'Custom Team Permissions',
+        'Dedicated Phone & Email Support',
+        'Personal Account Setup'
       ],
       popular: false,
       buttonText: 'Contact Sales'
@@ -327,7 +327,7 @@ export default function LandingPage({ onOpenAuth }) {
           {/* Badge */}
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider mb-8 shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>AI-Powered Multi-Tenant Project Management</span>
+            <span>Simple Project & Client Management for Growing Teams</span>
           </div>
 
           {/* Main Hero Heading (Desktop: 56-64px / Mobile: 34-40px) */}
@@ -340,7 +340,7 @@ export default function LandingPage({ onOpenAuth }) {
 
           {/* Supporting Text */}
           <p className="mt-6 text-base sm:text-xl md:text-[21px] text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium">
-            WorkForge is a secure SaaS platform that enables organizations to manage projects, clients, employees, tasks, invoices, files, calendars, reports, and collaboration from one centralized workspace. Built with role-based access, organization isolation, and AI-powered productivity features.
+            WorkForge makes it easy to run your business in one place. Keep track of your clients, projects, tasks, invoices, team members, and deadlines with a simple, friendly system anyone can use.
           </p>
 
           {/* Hero CTA Buttons */}
@@ -371,14 +371,14 @@ export default function LandingPage({ onOpenAuth }) {
                   <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
                   <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
                   <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-                  <span className="ml-3 text-xs font-mono font-semibold text-slate-500 dark:text-slate-400">
-                    https://workforge.app/dashboard • Active Organization: Enterprise Workspace
+                  <span className="ml-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    WorkForge Dashboard • Active Workspace: Acme Studios
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-2 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <span>Real-Time Sync Active</span>
+                  <span>Everything Updated</span>
                 </div>
               </div>
 
@@ -388,7 +388,7 @@ export default function LandingPage({ onOpenAuth }) {
                 {/* Metric 1 */}
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                   <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase">
-                    <span>Collected Revenue</span>
+                    <span>Total Earned</span>
                     <IndianRupee className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">₹14,85,000</div>
@@ -402,27 +402,27 @@ export default function LandingPage({ onOpenAuth }) {
                     <Briefcase className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">12 Active</div>
-                  <div className="text-[11px] text-blue-600 font-semibold mt-1">94% Sprint Completion</div>
+                  <div className="text-[11px] text-blue-600 font-semibold mt-1">94% Finished</div>
                 </div>
 
                 {/* Metric 3 */}
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                   <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase">
-                    <span>Billable Hours</span>
+                    <span>Hours Worked</span>
                     <Clock className="w-4 h-4 text-purple-600" />
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">342.5 Hrs</div>
-                  <div className="text-[11px] text-purple-600 font-semibold mt-1">Stopwatch Live</div>
+                  <div className="text-[11px] text-purple-600 font-semibold mt-1">Timer active</div>
                 </div>
 
                 {/* Metric 4 */}
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                   <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase">
-                    <span>AI Health Index</span>
+                    <span>Project Health</span>
                     <Sparkles className="w-4 h-4 text-amber-500" />
                   </div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">96 / 100</div>
-                  <div className="text-[11px] text-emerald-600 font-semibold mt-1">Low Portfolio Risk</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">96%</div>
+                  <div className="text-[11px] text-emerald-600 font-semibold mt-1">On Track</div>
                 </div>
 
               </div>
@@ -433,31 +433,31 @@ export default function LandingPage({ onOpenAuth }) {
                 {/* Kanban Column Preview */}
                 <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-3">
                   <div className="flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">
-                    <span>Active Sprint Kanban Tasks</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 font-mono">4 Tasks</span>
+                    <span>Today's Task List</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 font-semibold">4 Tasks</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xs">
                       <div className="flex items-center justify-between text-[10px] font-bold text-red-600 uppercase">
                         <span>High Priority</span>
-                        <span className="text-slate-400">#TSK-104</span>
+                        <span className="text-slate-400">Due Today</span>
                       </div>
                       <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 mt-1">
-                        Implement RBAC Tenant Scoping
+                        Finalize Client Proposal
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-1">Assigned: Engineering Team</div>
+                      <div className="text-[10px] text-slate-500 mt-1">Assigned to: Design Team</div>
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xs">
                       <div className="flex items-center justify-between text-[10px] font-bold text-emerald-600 uppercase">
                         <span>Completed</span>
-                        <span className="text-slate-400">#TSK-102</span>
+                        <span className="text-slate-400">Paid</span>
                       </div>
                       <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 mt-1">
-                        GST Invoice PDF Generator
+                        Send Monthly Invoice
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-1">Export Ready • ₹45,000</div>
+                      <div className="text-[10px] text-slate-500 mt-1">Ready to send • ₹45,000</div>
                     </div>
                   </div>
                 </div>
@@ -474,7 +474,7 @@ export default function LandingPage({ onOpenAuth }) {
                           <div className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-[10px]">KC</div>
                           <span className="font-semibold text-slate-800 dark:text-slate-200">Kavy Choudhary</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-emerald-600">Company Admin</span>
+                        <span className="text-[10px] font-semibold text-emerald-600">Admin</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center space-x-2">
@@ -487,8 +487,8 @@ export default function LandingPage({ onOpenAuth }) {
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 dark:border-slate-700 mt-3 text-[11px] text-slate-500 flex justify-between items-center">
-                    <span>Next Milestone: Client Review</span>
-                    <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">Tomorrow</span>
+                    <span>Next Review: Client Call</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-bold">Tomorrow</span>
                   </div>
                 </div>
 
@@ -503,13 +503,13 @@ export default function LandingPage({ onOpenAuth }) {
       {/* 3. 10 FEATURES SECTION */}
       <section id="features" className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider mb-4">
-          <span>Enterprise Capabilities</span>
+          <span>Simple & Powerful Features</span>
         </div>
         <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Everything You Need to Scale Operations
+          Everything You Need to Run Your Business
         </h2>
         <p className="mt-3 text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
-          WorkForge unifies project governance, client relations, task workflows, team collaboration, and AI automation into one cohesive platform.
+          Manage your clients, projects, tasks, invoices, and team in one simple, organized workspace.
         </p>
 
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
@@ -567,13 +567,13 @@ export default function LandingPage({ onOpenAuth }) {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider mb-4">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Next-Gen Artificial Intelligence</span>
+              <span>Smart Assistance</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              AI-Assisted Productivity & Decision Making
+              Smart Tools That Save You Time
             </h2>
             <p className="mt-3 text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed">
-              WorkForge integrates embedded AI algorithms to automate risk analysis, forecast task timelines, and synthesize raw meeting notes into structured deliverables.
+              Use built-in smart tools to summarize meeting notes, check project status, and keep work moving on schedule.
             </p>
           </div>
 
@@ -595,20 +595,20 @@ export default function LandingPage({ onOpenAuth }) {
         </div>
       </section>
 
-      {/* 6. SECURITY & MULTI-TENANT ARCHITECTURE */}
+      {/* 6. SECURITY SECTION */}
       <section id="security" className="py-20 md:py-28 bg-slate-900 text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           
           <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-slate-800 text-amber-400 text-xs font-bold uppercase tracking-wider mb-4 border border-slate-700">
             <Lock className="w-3.5 h-3.5" />
-            <span>Zero-Trust Enterprise Security</span>
+            <span>Privacy & Safety</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Security & Multi-Tenant Architecture
+            Keep Your Business Data Safe & Private
           </h2>
           <p className="mt-3 text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
-            Every organization operates inside its own isolated logical tenant boundary with enterprise encryption, RBAC permissions, and full audit trail transparency.
+            Your files, invoices, and project details are kept completely private to your company and protected with industry-standard safety measures.
           </p>
 
           <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
@@ -632,13 +632,13 @@ export default function LandingPage({ onOpenAuth }) {
       {/* 7. DASHBOARD PREVIEW TABBED SWITCHER */}
       <section id="solutions" className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold uppercase tracking-wider mb-4">
-          <span>Unified Workspace Preview</span>
+          <span>Interactive Preview</span>
         </div>
         <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Explore the Centralized WorkForge Suite
+          See How Simple It Is to Use
         </h2>
         <p className="mt-3 text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
-          Switch between dedicated workspace views to see how WorkForge simplifies daily operations.
+          Click any tab below to see how each part of WorkForge works.
         </p>
 
         {/* Tab Switcher */}
@@ -662,80 +662,80 @@ export default function LandingPage({ onOpenAuth }) {
         <div className="mt-8 glass-panel p-8 text-left rounded-2xl border border-slate-300 dark:border-slate-800">
           {activePreviewTab === 'dashboard' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Executive Portfolio Dashboard</h3>
-              <p className="text-xs text-slate-500 mb-4">Real-time financial metrics, project status breakdown, billable stopwatch stats, and activity logs.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Dashboard View]: Revenue ₹14,85,000 • Active Projects: 12 • Billable Hours: 342.5 Hrs • AI Health Score: 96/100
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Overview Dashboard</h3>
+              <p className="text-xs text-slate-500 mb-4">See your earnings, active projects, and urgent deadlines at a glance.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Revenue: ₹14,85,000 • Active Projects: 12 • Hours Worked: 342.5 Hrs • Project Health: 96%
               </div>
             </div>
           )}
 
           {activePreviewTab === 'projects' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Projects & AI Portfolio Governance</h3>
-              <p className="text-xs text-slate-500 mb-4">Track project budgets, sprint completion bars, assigned team members, and AI health scores.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Projects View]: Active Pipeline • FinTech Portal (₹4,50,000) • E-Commerce Redesign (₹8,20,000) • Mobile App QA
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Projects & Milestones</h3>
+              <p className="text-xs text-slate-500 mb-4">Keep track of project progress, budgets, deadlines, and assigned team members.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Active Projects: Website Redesign (₹4,50,000) • Mobile App QA (₹8,20,000) • Marketing Campaign
               </div>
             </div>
           )}
 
           {activePreviewTab === 'tasks' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Kanban Task Board & Workflows</h3>
-              <p className="text-xs text-slate-500 mb-4">4-column Kanban workflow (Planning, In Progress, Testing, Completed) with drag-and-drop support.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Kanban Board View]: 18 Active Tasks • Subtask Checklists • Hour Estimations vs Logged Stopwatch Time
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Visual Task Boards</h3>
+              <p className="text-xs text-slate-500 mb-4">Simple to-do lists and status cards so work gets finished on time.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                18 Active Tasks • Checklists • Priority Labels • Live Timers
               </div>
             </div>
           )}
 
           {activePreviewTab === 'calendar' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Calendar & Unified Schedule</h3>
-              <p className="text-xs text-slate-500 mb-4">Visual calendar showing project milestones, sprint deadlines, client reviews, and team events.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Calendar View]: Synchronized Schedule • Next Release: Aug 12 • Client Review: Tomorrow 3:00 PM IST
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Calendar & Schedule</h3>
+              <p className="text-xs text-slate-500 mb-4">Visual calendar showing project milestones, deadlines, client reviews, and meetings.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Upcoming Schedule: Project Delivery on Aug 12 • Client Review Tomorrow at 3:00 PM
               </div>
             </div>
           )}
 
           {activePreviewTab === 'reports' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Reports & Executive Analytics</h3>
-              <p className="text-xs text-slate-500 mb-4">Comprehensive portfolio reports covering revenue trends, team utilization rates, and expense ratios.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Analytics View]: Monthly MRR Trends • 94% Team Utilization Rate • Average Project Completion Velocity: 14 Days
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Reports & Numbers</h3>
+              <p className="text-xs text-slate-500 mb-4">Easy charts showing your revenue trends, team work hours, and project milestones.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Monthly Income Trends • 94% Team Productivity • Average Delivery: 14 Days
               </div>
             </div>
           )}
 
           {activePreviewTab === 'clients' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Client Directory & Accounts</h3>
-              <p className="text-xs text-slate-500 mb-4">Client contact directory, billing totals, GST tax registration IDs, and linked active contracts.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Client Profiles View]: Acme Tech Solutions (GSTIN: 27AAAAA0000A1Z5) • Total Billed: ₹12,50,000 • 3 Active Contracts
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Client Directory</h3>
+              <p className="text-xs text-slate-500 mb-4">Client contact details, phone numbers, addresses, and billing history in one place.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Acme Tech Solutions • Total Billed: ₹12,50,000 • 3 Active Contracts
               </div>
             </div>
           )}
 
           {activePreviewTab === 'invoices' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Invoicing & Client Billing Export</h3>
-              <p className="text-xs text-slate-500 mb-4">Automated GST tax calculations, discounts, payment status tracking, and instant client-side PDF export.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Invoice Billing View]: Invoice #INV-2026-001 • Subtotal: ₹1,00,000 • GST 18%: ₹18,000 • Total: ₹1,18,000 [Download PDF]
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Invoices & Billing</h3>
+              <p className="text-xs text-slate-500 mb-4">Automatic tax and discount calculations with clean PDF invoice downloads.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Invoice #INV-2026-001 • Subtotal: ₹1,00,000 • GST 18%: ₹18,000 • Total: ₹1,18,000 [Download PDF]
               </div>
             </div>
           )}
 
           {activePreviewTab === 'team' && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Team Directory & HR Roles</h3>
-              <p className="text-xs text-slate-500 mb-4">Organization member list, department structures, designations, and role-based permissions.</p>
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-slate-700 dark:text-slate-300">
-                [Team Directory View]: Executive Admin (Kavy Choudhary) • Project Managers (3) • Engineering Lead • Design Team (4)
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Team Directory</h3>
+              <p className="text-xs text-slate-500 mb-4">See team members, job roles, departments, and skills.</p>
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300">
+                Admins • Project Managers • Developers • Designers
               </div>
             </div>
           )}
@@ -749,13 +749,13 @@ export default function LandingPage({ onOpenAuth }) {
             
             <div>
               <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider mb-4">
-                <span>The WorkForge Advantage</span>
+                <span>Why Teams Choose WorkForge</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Why Industry Leaders Choose WorkForge
+                Simple, Friendly Work Management
               </h2>
               <p className="mt-4 text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-                WorkForge provides an end-to-end operational operating system designed specifically for organizations that require high-level governance, strict data security, and seamless client collaboration.
+                WorkForge gives you an all-in-one place to manage your daily work without confusing technical jargon or complicated training.
               </p>
 
               <div className="mt-8 space-y-4">
@@ -769,23 +769,23 @@ export default function LandingPage({ onOpenAuth }) {
             </div>
 
             <div className="glass-panel p-8 rounded-3xl space-y-6">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Built for Growing Organizations</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Built for Growing Businesses</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Whether you manage a 5-person agency or a multi-department enterprise, WorkForge scales effortlessly without structural friction.
+                Whether you have a team of 3 or 30, WorkForge is easy to set up and start using immediately.
               </p>
 
               <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  <span>Architecture Model</span>
-                  <span className="font-mono text-red-600 dark:text-rose-400 font-bold">Multi-Tenant Scoped</span>
+                  <span>Account Setup</span>
+                  <span className="text-red-600 dark:text-rose-400 font-bold">Private & Secure</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  <span>Security Compliance</span>
-                  <span className="font-mono text-emerald-600 font-bold">SOC 2 & RBAC</span>
+                  <span>Data Protection</span>
+                  <span className="text-emerald-600 font-bold">Encrypted & Safe</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  <span>Supported Currency</span>
-                  <span className="font-mono text-blue-600 font-bold">Indian Rupee (₹) & GST</span>
+                  <span>Currency</span>
+                  <span className="text-blue-600 font-bold">Indian Rupee (₹) & GST</span>
                 </div>
               </div>
             </div>
@@ -921,7 +921,7 @@ export default function LandingPage({ onOpenAuth }) {
           <div className="col-span-2 space-y-4">
             <WorkForgeLogo size="small" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
             <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-              Build Better Projects. Manage Smarter Teams. A secure multi-tenant AI-powered project & client management SaaS platform.
+              Build Better Projects. Manage Smarter Teams. Simple, friendly project and client management for your business.
             </p>
           </div>
 
@@ -939,15 +939,15 @@ export default function LandingPage({ onOpenAuth }) {
           <div className="space-y-3">
             <div className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">Resources</div>
             <ul className="space-y-2 font-medium">
-              <li><a href="#how-it-works" className="hover:text-red-600 dark:hover:text-white">Documentation</a></li>
-              <li><a href="#security" className="hover:text-red-600 dark:hover:text-white">Security & Audit</a></li>
-              <li><button onClick={() => setDemoModalOpen(true)} className="hover:text-red-600 dark:hover:text-white text-left">Support & FAQ</button></li>
+              <li><a href="#how-it-works" className="hover:text-red-600 dark:hover:text-white">How It Works</a></li>
+              <li><a href="#security" className="hover:text-red-600 dark:hover:text-white">Privacy & Safety</a></li>
+              <li><button onClick={() => setDemoModalOpen(true)} className="hover:text-red-600 dark:hover:text-white text-left">Help & FAQ</button></li>
             </ul>
           </div>
 
           {/* Company & Legal Links */}
           <div className="space-y-3">
-            <div className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">Company & Legal</div>
+            <div className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">Company</div>
             <ul className="space-y-2 font-medium">
               <li><a href="#solutions" className="hover:text-red-600 dark:hover:text-white">About WorkForge</a></li>
               <li><button onClick={() => setDemoModalOpen(true)} className="hover:text-red-600 dark:hover:text-white text-left">Contact Us</button></li>
@@ -960,7 +960,7 @@ export default function LandingPage({ onOpenAuth }) {
 
         <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
           <div>© 2026 WorkForge. All rights reserved.</div>
-          <div className="mt-2 sm:mt-0 font-mono text-[11px]">Enterprise SaaS OS • SOC 2 & RBAC Compliant</div>
+          <div className="mt-2 sm:mt-0 font-medium text-[11px]">Simple & Secure Work Management</div>
         </div>
       </footer>
 

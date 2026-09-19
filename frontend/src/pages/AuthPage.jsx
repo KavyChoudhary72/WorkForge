@@ -28,13 +28,8 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
   const [localError, setLocalError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Password Policy Checks
-  const passHasLength = password.length >= 8;
-  const passHasUpper = /[A-Z]/.test(password);
-  const passHasLower = /[a-z]/.test(password);
-  const passHasNumber = /[0-9]/.test(password);
-  const passHasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  const passIsValid = passHasLength && passHasUpper && passHasLower && passHasNumber && passHasSpecial;
+  // Password Policy: Simple and clean (minimum 8 characters)
+  const passIsValid = password.length >= 8;
 
   const handleLoginSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -50,7 +45,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
     if (res.success) {
       if (onLoginSuccess) onLoginSuccess(res.defaultPath);
     } else {
-      setLocalError(res.error || 'Authentication failed. Please check your credentials.');
+      setLocalError(res.error || 'Incorrect email or password. Please try again.');
     }
   };
 
@@ -60,12 +55,12 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
     setSuccessMsg('');
 
     if (!name || !email || !password || !companyName) {
-      setLocalError('All fields are required to register a company workspace.');
+      setLocalError('Please fill in all fields to create your account.');
       return;
     }
 
     if (!passIsValid) {
-      setLocalError('Please satisfy all password security requirements before creating a workspace.');
+      setLocalError('Password must be at least 8 characters long.');
       return;
     }
 
@@ -75,7 +70,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
         onLoginSuccess('/');
       }
     } else {
-      setLocalError(res.error || 'Workspace registration failed.');
+      setLocalError(res.error || 'Could not create account. Please try again.');
     }
   };
 
@@ -132,13 +127,13 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
 
         <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-400">
           {mode === 'login' 
-            ? 'Multi-Tenant Project & Client Management Platform' 
-            : 'Register a New Company Organization Workspace'}
+            ? 'Sign in to your account' 
+            : 'Create your company account'}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
-        {/* Main Theme-Consistent Card Container */}
+        {/* Main Card Container */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 py-8 px-6 shadow-xl dark:shadow-2xl rounded-2xl sm:px-10 transition-colors">
 
           {/* Mode Switcher Tabs */}
@@ -161,7 +156,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              Create Workspace
+              Create Account
             </button>
           </div>
 
@@ -185,8 +180,8 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
           {mode === 'login' ? (
             <form className="space-y-5" onSubmit={handleLoginSubmit}>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Work Email Address
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Email Address
                 </label>
                 <div className="relative">
                   <Mail className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
@@ -203,7 +198,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Password
                   </label>
                   <button
@@ -235,10 +230,10 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     onChange={(e) => setRememberSession(e.target.checked)}
                     className="rounded border-slate-300 dark:border-slate-800 text-blue-600 focus:ring-blue-500"
                   />
-                  <span>Remember session (30 Days)</span>
+                  <span>Remember me</span>
                 </label>
-                <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold flex items-center">
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1" /> JWT & HttpOnly
+                <span className="text-slate-500 dark:text-slate-400 text-xs flex items-center">
+                  <Lock className="w-3.5 h-3.5 mr-1 text-emerald-500" /> Safe & Protected
                 </span>
               </div>
 
@@ -248,21 +243,21 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                 className="w-full flex items-center justify-center py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all focus:outline-none text-sm disabled:opacity-50"
               >
                 {loading ? (
-                  <span>Authenticating...</span>
+                  <span>Signing in...</span>
                 ) : (
                   <>
-                    <span>Sign In to Workspace</span>
+                    <span>Sign In</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </button>
             </form>
           ) : (
-            /* COMPANY SIGN UP FORM */
+            /* SIGN UP FORM */
             <form className="space-y-4" onSubmit={handleSignupSubmit}>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Full Name
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Your Full Name
                 </label>
                 <div className="relative">
                   <User className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
@@ -271,15 +266,15 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
-                    placeholder="Jane Doe"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
+                    placeholder="e.g. Jane Doe"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Company / Organization Name
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Company or Business Name
                 </label>
                 <div className="relative">
                   <Building2 className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
@@ -288,15 +283,15 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     required
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
-                    placeholder="Acme Innovations Inc"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
+                    placeholder="e.g. Acme Studios"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Work Email Address
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Email Address
                 </label>
                 <div className="relative">
                   <Mail className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
@@ -305,15 +300,15 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
                     placeholder="jane@acme.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Create Password
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Password
                 </label>
                 <div className="relative">
                   <Lock className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
@@ -322,36 +317,13 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
-                    placeholder="Min 8 characters"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
+                    placeholder="At least 8 characters"
                   />
                 </div>
-
-                {/* Password Policy Indicator Checklist */}
-                {password.length > 0 && (
-                  <div className="mt-2.5 p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1 text-xs">
-                    <div className="flex items-center space-x-1.5">
-                      {passHasLength ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
-                      <span className={passHasLength ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-slate-500 dark:text-slate-400'}>Minimum 8 characters</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      {passHasUpper ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
-                      <span className={passHasUpper ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-slate-500 dark:text-slate-400'}>At least one uppercase letter (A-Z)</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      {passHasLower ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
-                      <span className={passHasLower ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-slate-500 dark:text-slate-400'}>At least one lowercase letter (a-z)</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      {passHasNumber ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
-                      <span className={passHasNumber ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-slate-500 dark:text-slate-400'}>At least one number (0-9)</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      {passHasSpecial ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
-                      <span className={passHasSpecial ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-slate-500 dark:text-slate-400'}>At least one special character (!@#$%^&*)</span>
-                    </div>
-                  </div>
-                )}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  Must be at least 8 characters long
+                </p>
               </div>
 
               <button
@@ -359,14 +331,14 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                 disabled={loading || (password.length > 0 && !passIsValid)}
                 className="w-full flex items-center justify-center py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all focus:outline-none text-sm disabled:opacity-50 mt-4"
               >
-                {loading ? 'Creating Workspace...' : 'Register & Enter Workspace'}
+                {loading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>
           )}
         </div>
 
-        <div className="mt-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-          WorkForge Enterprise SaaS • Secure MongoDB Authentication
+        <div className="mt-6 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+          WorkForge • Simple project and client management
         </div>
       </div>
 

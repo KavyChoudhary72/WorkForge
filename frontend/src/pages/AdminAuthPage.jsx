@@ -20,7 +20,7 @@ export default function AdminAuthPage({ onAdminLoginSuccess }) {
     setLocalError('');
 
     if (!email || !password) {
-      setLocalError('Super Admin credentials required.');
+      setLocalError('Please enter both email and password.');
       return;
     }
 
@@ -28,20 +28,20 @@ export default function AdminAuthPage({ onAdminLoginSuccess }) {
     if (res.success) {
       if (onAdminLoginSuccess) onAdminLoginSuccess(res.defaultPath);
     } else {
-      setLocalError(res.error || 'Access Denied: Only Super Admin accounts can authenticate through this portal.');
+      setLocalError(res.error || 'Access denied: Only platform administrators can sign in here.');
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Mesh */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40" />
+      {/* Subtle Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center">
         <WorkForgeLogo size="large" onClick={handleHomeNavigate} className="mb-4" />
-        <h2 className="text-2xl font-extrabold text-white tracking-tight">Platform Owner Governance</h2>
-        <p className="mt-2 text-xs font-mono uppercase tracking-widest text-amber-400 font-bold">
-          Restricted Portal • Super Admin Authentication Only
+        <h2 className="text-2xl font-bold text-white tracking-tight">System Admin Sign In</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Management area for platform administrators
         </p>
       </div>
 
@@ -57,8 +57,8 @@ export default function AdminAuthPage({ onAdminLoginSuccess }) {
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                Super Admin Email
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Admin Email
               </label>
               <div className="relative">
                 <Mail className="w-5 h-5 text-slate-500 absolute left-3 top-3" />
@@ -68,14 +68,14 @@ export default function AdminAuthPage({ onAdminLoginSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
-                  placeholder="kavychoudhary49@gmail.com"
+                  placeholder="admin@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                Master Password
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Password
               </label>
               <div className="relative">
                 <Lock className="w-5 h-5 text-slate-500 absolute left-3 top-3" />
@@ -98,25 +98,25 @@ export default function AdminAuthPage({ onAdminLoginSuccess }) {
                   onChange={(e) => setRememberSession(e.target.checked)}
                   className="rounded border-slate-800 bg-slate-950 text-amber-600 focus:ring-amber-500"
                 />
-                <span>Remember session (30 Days)</span>
+                <span>Remember me for 30 days</span>
               </label>
             </div>
 
-            <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded-xl text-[11px] text-amber-300/90 flex items-center">
+            <div className="p-3 bg-amber-950/20 border border-amber-800/30 rounded-xl text-xs text-amber-300/90 flex items-center">
               <ShieldCheck className="w-4 h-4 mr-2.5 text-amber-400 flex-shrink-0" />
-              <span>This portal is strictly restricted to platform owners. Normal user accounts cannot authenticate through this route.</span>
+              <span>For platform administrators only. Team members and clients can sign in on the main login page.</span>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center py-3 px-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg shadow-amber-600/20 transition-colors focus:outline-none text-sm disabled:opacity-50"
+              className="w-full flex items-center justify-center py-3 px-4 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl shadow-lg shadow-amber-600/20 transition-colors focus:outline-none text-sm disabled:opacity-50"
             >
               {loading ? (
-                <span>Verifying Governance Credentials...</span>
+                <span>Signing in...</span>
               ) : (
                 <>
-                  <span>Authenticate Super Admin</span>
+                  <span>Sign In as Admin</span>
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
@@ -125,7 +125,7 @@ export default function AdminAuthPage({ onAdminLoginSuccess }) {
         </div>
 
         <div className="mt-6 text-center text-xs text-slate-500">
-          WorkForge Platform Security Protocol • ISO/IEC 27001 Certified Governance
+          WorkForge Administration • Safe & Secure
         </div>
       </div>
     </div>

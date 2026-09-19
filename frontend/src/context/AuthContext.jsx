@@ -422,6 +422,15 @@ export function AuthProvider({ children }) {
   const updateCurrentUser = (user) => {
     setCurrentUser(user);
     localStorage.setItem('nexus_user', JSON.stringify(user));
+    const newPlan = user?.subscriptionDetails?.plan || user?.organizationId?.plan;
+    if (newPlan) {
+      setCurrentOrg(prev => {
+        if (!prev) return prev;
+        const updated = { ...prev, plan: newPlan };
+        localStorage.setItem('nexus_org', JSON.stringify(updated));
+        return updated;
+      });
+    }
   };
 
   const value = {

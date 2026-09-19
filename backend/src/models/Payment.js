@@ -11,12 +11,12 @@ const paymentSchema = new mongoose.Schema(
     invoiceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Invoice',
-      required: true
+      required: false
     },
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',
-      required: true
+      required: false
     },
     amount: {
       type: Number,

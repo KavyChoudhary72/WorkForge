@@ -16,14 +16,15 @@ import {
   Sparkles,
   ChevronDown,
   Settings,
-  UserCircle
+  UserCircle,
+  Crown
 } from 'lucide-react';
 import WorkForgeLogo from '../common/WorkForgeLogo';
 import { OrgLogo } from '../common/UserAvatar';
 import { useAuth } from '../../context/AuthContext';
 import ImageCropperModal from '../common/ImageCropperModal';
 
-export default function Sidebar({ activePage, setActivePage }) {
+export default function Sidebar({ activePage, setActivePage, onOpenPlanChooser }) {
   const { currentOrg, switchOrganization, organizationsList, currentUser, updateCompanyLogo } = useAuth();
   const [showOrgDropdown, setShowOrgDropdown] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -31,7 +32,7 @@ export default function Sidebar({ activePage, setActivePage }) {
   const isSuperAdmin = currentUser?.role === 'Super Admin' || currentUser?.role === 'SUPER_ADMIN';
 
   const menuItems = [
-    { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'organizations', label: 'Multi-Tenant Orgs', icon: Building2, badge: 'Super Admin', restricted: !isSuperAdmin },
     { id: 'clients', label: 'Client Directory', icon: Users },
     { id: 'projects', label: 'Projects & AI Health', icon: Briefcase },
@@ -87,6 +88,20 @@ export default function Sidebar({ activePage, setActivePage }) {
                 <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">{currentOrg?.plan || 'Pro Plan'}</div>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0 ml-1" />
+            </button>
+          </div>
+
+          {/* Quick Plan Badge & Upgrade Button */}
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 text-[11px]">
+            <span className="font-semibold text-slate-500 dark:text-slate-400">Plan:</span>
+            <button
+              type="button"
+              onClick={() => onOpenPlanChooser && onOpenPlanChooser()}
+              className="flex items-center space-x-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-800/60 transition-colors cursor-pointer"
+            >
+              <Crown className="w-3 h-3 text-amber-500" />
+              <span>{currentOrg?.plan || 'Pro Plan'}</span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold ml-1 hover:underline">• Upgrade</span>
             </button>
           </div>
 
@@ -156,6 +171,30 @@ export default function Sidebar({ activePage, setActivePage }) {
             );
           })}
         </nav>
+
+        {/* Premium Plan Upgrade Card */}
+        <div className="p-3 mx-3 my-2 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 border border-indigo-500/30 text-white shadow-md">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center space-x-1.5 text-amber-400 text-xs font-bold">
+              <Crown className="w-3.5 h-3.5" />
+              <span>Premium Plan</span>
+            </div>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+              {currentOrg?.plan || 'Active'}
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-300 leading-snug mb-2.5">
+            Upgrade anytime to unlock unlimited projects, team members, and AI tools.
+          </p>
+          <button
+            type="button"
+            onClick={() => onOpenPlanChooser && onOpenPlanChooser()}
+            className="w-full py-1.5 px-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>Upgrade / Purchase</span>
+          </button>
+        </div>
 
         {/* Sidebar Footer Info */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-xs">

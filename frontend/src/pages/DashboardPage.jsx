@@ -11,7 +11,8 @@ import {
   Sparkles,
   Users,
   ShieldCheck,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Crown
 } from 'lucide-react';
 import {
   AreaChart,
@@ -30,7 +31,7 @@ import {
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
-export default function DashboardPage({ setActivePage }) {
+export default function DashboardPage({ setActivePage, onOpenPlanChooser }) {
   const { projects, clients, invoices, timeLogs, tasks, activityLogs } = useData();
   const { currentOrg, currentUser } = useAuth();
 
@@ -104,6 +105,11 @@ export default function DashboardPage({ setActivePage }) {
           <div className="flex items-center space-x-2 text-xs font-semibold tracking-wider text-blue-400 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <span>{currentOrg.name}</span>
+            <span className="text-slate-600">•</span>
+            <span className="text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/30 flex items-center space-x-1">
+              <Crown className="w-3 h-3 text-amber-400" />
+              <span>{currentOrg.plan || 'Pro Plan'}</span>
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Welcome back, {currentUser.name}
@@ -114,6 +120,14 @@ export default function DashboardPage({ setActivePage }) {
         </div>
 
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => onOpenPlanChooser && onOpenPlanChooser()}
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white text-xs font-bold rounded-lg shadow-md transition-all cursor-pointer"
+          >
+            <Crown className="w-4 h-4 text-amber-100" />
+            <span>Upgrade Plan</span>
+          </button>
+
           <button
             onClick={() => setActivePage('aihub')}
             className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-md transition-all"

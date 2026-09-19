@@ -9,13 +9,15 @@ import {
   CheckCircle,
   KeyRound,
   Laptop,
-  HardDrive
+  HardDrive,
+  Crown,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { OrgLogo } from '../components/common/UserAvatar';
 
-export default function SettingsPage() {
+export default function SettingsPage({ onOpenPlanChooser }) {
   const { currentOrg, currentUser, apiFetch } = useAuth();
   const { addNotification } = useData();
 
@@ -144,6 +146,18 @@ export default function SettingsPage() {
         >
           <Bell className="w-4 h-4" />
           <span>Notification Alerts</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('billing')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all ${
+            activeTab === 'billing'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <CreditCard className="w-4 h-4" />
+          <span>Subscription & Plans</span>
         </button>
       </div>
 
@@ -332,6 +346,73 @@ export default function SettingsPage() {
                 />
               </label>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: Subscription & Plans */}
+      {activeTab === 'billing' && (
+        <div className="space-y-6 max-w-3xl">
+          {/* Active Plan Overview Card */}
+          <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-blue-950/40 border border-indigo-500/30 text-white space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-700/60">
+              <div>
+                <div className="flex items-center space-x-2 text-xs text-amber-400 font-bold uppercase tracking-wider mb-1">
+                  <Crown className="w-4 h-4" />
+                  <span>Current Subscription</span>
+                </div>
+                <h2 className="text-2xl font-black tracking-tight text-white">
+                  {currentOrg?.plan || 'Pro Plan'}
+                </h2>
+                <p className="text-xs text-slate-300 mt-1">
+                  All features for your workspace are active and in good standing.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onOpenPlanChooser && onOpenPlanChooser()}
+                className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Upgrade / Change Plan</span>
+              </button>
+            </div>
+
+            {/* Plan Highlights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div className="text-slate-400 text-[11px]">Projects & Clients</div>
+                <div className="text-sm font-bold text-slate-100 mt-1">Unlimited</div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div className="text-slate-400 text-[11px]">Storage Allocation</div>
+                <div className="text-sm font-bold text-slate-100 mt-1">100 GB Cloud Storage</div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div className="text-slate-400 text-[11px]">AI Intelligence Hub</div>
+                <div className="text-sm font-bold text-emerald-400 mt-1">Active & Enabled</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Plan Comparison Summary */}
+          <div className="glass-panel p-6 rounded-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Need more capacity or custom features?</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-xs">Browse all available subscription tiers anytime.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onOpenPlanChooser && onOpenPlanChooser()}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-bold transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
+              >
+                View All Plans
+              </button>
+            </div>
           </div>
         </div>
       )}

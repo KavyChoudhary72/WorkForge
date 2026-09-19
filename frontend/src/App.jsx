@@ -311,7 +311,11 @@ function AppContent() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-navy-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Sidebar Navigation */}
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+      <Sidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
+        onOpenPlanChooser={() => setShowPlanChooserModal(true)}
+      />
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
@@ -324,7 +328,12 @@ function AppContent() {
 
         {/* Scrollable Viewport */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activePage === 'dashboard' && <DashboardPage setActivePage={setActivePage} />}
+          {activePage === 'dashboard' && (
+            <DashboardPage
+              setActivePage={setActivePage}
+              onOpenPlanChooser={() => setShowPlanChooserModal(true)}
+            />
+          )}
           {activePage === 'organizations' && <OrganizationMgmtPage />}
           {activePage === 'clients' && <ClientMgmtPage />}
           {activePage === 'projects' && <ProjectMgmtPage />}
@@ -337,7 +346,11 @@ function AppContent() {
           {activePage === 'activity' && <ActivityLogsPage />}
           {activePage === 'reports' && <ReportsPage />}
           {activePage === 'integrations' && <IntegrationsPage />}
-          {activePage === 'settings' && <SettingsPage />}
+          {activePage === 'settings' && (
+            <SettingsPage
+              onOpenPlanChooser={() => setShowPlanChooserModal(true)}
+            />
+          )}
           {activePage === 'profile' && <ProfilePage />}
           {activePage === 'aihub' && <AiHubPage />}
         </main>
@@ -369,7 +382,7 @@ function AppContent() {
           apiFetch={apiFetch}
           silentRefresh={silentRefresh}
           updateCurrentUser={updateCurrentUser}
-          currentPlan={currentUser?.subscriptionDetails?.plan}
+          currentPlan={currentUser?.subscriptionDetails?.plan || currentOrg?.plan || 'Pro Plan'}
         />
       )}
     </div>

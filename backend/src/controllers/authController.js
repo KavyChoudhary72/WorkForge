@@ -923,14 +923,26 @@ export const activateTrial = async (req, res, next) => {
 
 export const choosePlan = async (req, res, next) => {
   try {
-    const { plan } = req.body;
+    const { plan, cycle = 'monthly', paymentMethod = 'Direct Manual Purchase' } = req.body;
     const orgId = req.user?.organizationId;
     if (!orgId) {
       return res.status(400).json({ message: 'User does not belong to any organization.' });
     }
 
-    if (!['Starter Plan', 'Pro Plan', 'Enterprise Plan'].includes(plan)) {
-      return res.status(400).json({ message: 'Invalid plan selected.' });
+    // Normalize plan name
+    let normalizedPlan = 'Pro Plan';
+    let amount = 2499;
+    if (plan && plan.toLowerCase().includes('starter')) {
+      normalizedPlan = 'Starter Plan';
+      amount = 999;
+    } else if (plan && plan.toLowerCase().includes('enterprise')) {
+      normalizedPlan = 'Enterprise Plan';
+      amount = cycle === 'annually' ? 44999 : 4999;
+    } else {
+      normalizedPlan = 'Pro Plan';
+      if (cycle === 'quarterly') amount = 6499;
+      else if (cycle === 'annually') amount = 22499;
+      else amount = 2499;
     }
 
     const org = await Organization.findById(orgId);
@@ -938,15 +950,37 @@ export const choosePlan = async (req, res, next) => {
       return res.status(404).json({ message: 'Organization not found.' });
     }
 
-    org.plan = plan;
-    org.subscriptionPlan = plan;
+    org.plan = normalizedPlan;
+    org.subscriptionPlan = normalizedPlan;
+    org.trialActivated = false;
     await org.save();
+
+    // Record payment in DB
+    const Payment = (await import('../models/Payment.js')).default;
+    await Payment.create({
+      organizationId: org._id,
+      amount,
+      paymentMethod: paymentMethod === 'Razorpay' ? 'Razorpay' : 'Credit Card',
+      status: 'Completed',
+      transactionId: `SUB-${Date.now()}`,
+      paymentDate: new Date()
+    });
+
+    // Record Activity Log
+    const ActivityLog = (await import('../models/ActivityLog.js')).default;
+    await ActivityLog.create({
+      organizationId: org._id,
+      userId: req.user.id,
+      userName: req.user.name,
+      action: 'SUBSCRIPTION_UPGRADED',
+      details: `${req.user.name} purchased ${normalizedPlan} (${cycle}) for ${org.name}.`
+    });
 
     const User = (await import('../models/User.js')).default;
     const user = await User.findById(req.user.id).populate('organizationId');
 
     res.json({
-      message: `Successfully upgraded to ${plan}.`,
+      message: `Successfully upgraded to ${normalizedPlan}.`,
       user: {
         id: user._id,
         userId: user._id,

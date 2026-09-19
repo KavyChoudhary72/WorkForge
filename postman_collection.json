@@ -1,0 +1,567 @@
+{
+  "info": {
+    "name": "WorkForge Multi-Tenant SaaS API Collection",
+    "_postman_id": "c9284fa0-82a1-4389-9a2d-1144a17df9a0",
+    "description": "Production-ready Postman collection for WorkForge Multi-Tenant SaaS Platform covering Auth, Organizations, Clients, Projects, Tasks, Timelogs, Invoices, Files, Leaves, Activity Logs, and AI Intelligence Hub.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orgId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invoiceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Security",
+      "item": [
+        {
+          "name": "Register Company Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@acmecorp.com\",\n  \"password\": \"SecurePass123!\",\n  \"companyName\": \"Acme Corp\",\n  \"role\": \"Company Admin\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"peter@oscorp.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Silent Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["auth", "refresh-token"] }
+          }
+        },
+        {
+          "name": "Activate 7-Day Trial",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/auth/activate-trial", "host": ["{{baseUrl}}"], "path": ["auth", "activate-trial"] }
+          }
+        },
+        {
+          "name": "Get Active Device Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/sessions", "host": ["{{baseUrl}}"], "path": ["auth", "sessions"] }
+          }
+        },
+        {
+          "name": "Log Out Current Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "Log Out All Devices (Revoke All Tokens)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["auth", "logout-all"] }
+          }
+        },
+        {
+          "name": "Update User Profile & Skills",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe Senior\",\n  \"bio\": \"Lead Full Stack Architect\",\n  \"skills\": [\"React\", \"Node.js\", \"MongoDB\", \"DevOps\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/update-profile", "host": ["{{baseUrl}}"], "path": ["auth", "update-profile"] }
+          }
+        },
+        {
+          "name": "Update Organization Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp International\",\n  \"currency\": \"INR\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"taxRate\": 18\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/update-organization", "host": ["{{baseUrl}}"], "path": ["auth", "update-organization"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Super Admin Multi-Tenancy",
+      "item": [
+        {
+          "name": "Get Super Admin Platform Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/analytics", "host": ["{{baseUrl}}"], "path": ["admin", "analytics"] }
+          }
+        },
+        {
+          "name": "List All Organizations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/organizations", "host": ["{{baseUrl}}"], "path": ["admin", "organizations"] }
+          }
+        },
+        {
+          "name": "Provision New Tenant Workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Stark Industries\",\n  \"plan\": \"Enterprise Plan\",\n  \"adminEmail\": \"tony@stark.com\",\n  \"adminName\": \"Tony Stark\",\n  \"adminPassword\": \"IronMan2026!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/organizations", "host": ["{{baseUrl}}"], "path": ["admin", "organizations"] }
+          }
+        },
+        {
+          "name": "Update Tenant Workspace Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Active\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/organizations/{{orgId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "organizations", "{{orgId}}", "status"] }
+          }
+        },
+        {
+          "name": "Upgrade Tenant Subscription Plan",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"Enterprise Plan\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/organizations/{{orgId}}/plan", "host": ["{{baseUrl}}"], "path": ["admin", "organizations", "{{orgId}}", "plan"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Clients Management",
+      "item": [
+        {
+          "name": "List All Clients (Filtered & Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/clients?search=&status=&isArchived=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "status", "value": "" },
+                { "key": "isArchived", "value": "false" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Client Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wayne Enterprises\",\n  \"contactPerson\": \"Bruce Wayne\",\n  \"email\": \"bruce@wayne.com\",\n  \"phone\": \"+91 9876543210\",\n  \"industry\": \"Technology\",\n  \"address\": \"Gotham City Tower, Financial District\",\n  \"gstNumber\": \"27AAAAA0000A1Z5\",\n  \"notes\": \"High value strategic corporate account\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Update Client Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wayne Global Technologies\",\n  \"status\": \"Active\",\n  \"notes\": \"Annual enterprise contract signed\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients/{{clientId}}", "host": ["{{baseUrl}}"], "path": ["clients", "{{clientId}}"] }
+          }
+        },
+        {
+          "name": "Toggle Archive/Restore Client",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/clients/{{clientId}}/archive", "host": ["{{baseUrl}}"], "path": ["clients", "{{clientId}}", "archive"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Projects & Milestones",
+      "item": [
+        {
+          "name": "List Tenant Projects",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          }
+        },
+        {
+          "name": "Create New Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Autonomous Security Platform\",\n  \"code\": \"ASP-2026\",\n  \"clientId\": \"{{clientId}}\",\n  \"budget\": 750000,\n  \"deadline\": \"2026-12-31\",\n  \"priority\": \"High\",\n  \"status\": \"Planning\",\n  \"description\": \"Real-time security auditing engine\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          }
+        },
+        {
+          "name": "Update Project Status & Assigned Team",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\",\n  \"completionPercent\": 35,\n  \"spent\": 180000\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Tasks & Kanban Sprints",
+      "item": [
+        {
+          "name": "List Tasks (Filter by Project & Status)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tasks?projectId={{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"],
+              "query": [{ "key": "projectId", "value": "{{projectId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Create Sprint Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implement Zero-Trust JWT Authentication\",\n  \"description\": \"Enforce asymmetric token rotation and tenant isolation\",\n  \"projectId\": \"{{projectId}}\",\n  \"priority\": \"High\",\n  \"status\": \"Todo\",\n  \"dueDate\": \"2026-10-15\",\n  \"labels\": [\"Security\", \"Backend\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Update Task Kanban Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}/status", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}", "status"] }
+          }
+        },
+        {
+          "name": "Post Task Discussion Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Code review approved and ready for staging deployment.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}/comments", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}", "comments"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Time Tracking & Productivity",
+      "item": [
+        {
+          "name": "Get Workspace Time Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/time", "host": ["{{baseUrl}}"], "path": ["time"] }
+          }
+        },
+        {
+          "name": "Log Billable Work Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"taskId\": \"{{taskId}}\",\n  \"hours\": 3.5,\n  \"description\": \"Implemented API endpoints and tested multi-tenant middleware\",\n  \"billable\": true,\n  \"hourlyRate\": 1500\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/time", "host": ["{{baseUrl}}"], "path": ["time"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Invoices & Billing",
+      "item": [
+        {
+          "name": "List All Invoices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/invoices", "host": ["{{baseUrl}}"], "path": ["invoices"] }
+          }
+        },
+        {
+          "name": "Generate Tax Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"dueDate\": \"2026-11-01\",\n  \"items\": [\n    {\n      \"description\": \"Sprint 1 Core SaaS Architecture\",\n      \"quantity\": 1,\n      \"unitPrice\": 150000,\n      \"amount\": 150000\n    }\n  ],\n  \"subtotal\": 150000,\n  \"taxRate\": 18,\n  \"taxAmount\": 27000,\n  \"discount\": 5,\n  \"discountAmount\": 7500,\n  \"totalAmount\": 169500,\n  \"notes\": \"Payment due within 30 days of receipt\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/invoices", "host": ["{{baseUrl}}"], "path": ["invoices"] }
+          }
+        },
+        {
+          "name": "Update Invoice Status (Mark Paid)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Paid\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/invoices/{{invoiceId}}/status", "host": ["{{baseUrl}}"], "path": ["invoices", "{{invoiceId}}", "status"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. File Manager & Assets",
+      "item": [
+        {
+          "name": "List Tenant Files",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/files", "host": ["{{baseUrl}}"], "path": ["files"] }
+          }
+        },
+        {
+          "name": "Upload File (Multer / Cloudinary)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "category", "value": "Contracts", "type": "text" },
+                { "key": "projectId", "value": "{{projectId}}", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/files", "host": ["{{baseUrl}}"], "path": ["files"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Team Directory & HR Leaves",
+      "item": [
+        {
+          "name": "List Leave Requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/leaves", "host": ["{{baseUrl}}"], "path": ["leaves"] }
+          }
+        },
+        {
+          "name": "Submit Leave Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Sick Leave\",\n  \"startDate\": \"2026-10-01\",\n  \"endDate\": \"2026-10-02\",\n  \"days\": 2,\n  \"reason\": \"Medical recovery appointment\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/leaves", "host": ["{{baseUrl}}"], "path": ["leaves"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Activity Logs & Audit Trail",
+      "item": [
+        {
+          "name": "Get Immutable Audit Trail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/activity", "host": ["{{baseUrl}}"], "path": ["activity"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. AI Intelligence Hub",
+      "item": [
+        {
+          "name": "AI Project Health Score Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"budget\": 750000,\n  \"spent\": 180000,\n  \"deadline\": \"2026-12-31\",\n  \"tasksCompleted\": 14,\n  \"tasksTotal\": 20\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/ai/project-health", "host": ["{{baseUrl}}"], "path": ["ai", "project-health"] }
+          }
+        },
+        {
+          "name": "AI Task Summarization",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"context\": \"Technical review of JWT encryption protocols and refresh token rotation algorithms across multiple microservice pods.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/ai/summarize-task", "host": ["{{baseUrl}}"], "path": ["ai", "summarize-task"] }
+          }
+        }
+      ]
+    }
+  ]
+}

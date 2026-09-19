@@ -1,0 +1,20 @@
+import express from 'express';
+import { getFiles, createFile, uploadFile, uploadMiddleware, deleteFile } from '../controllers/fileController.js';
+import { protect } from '../middleware/authMiddleware.js';
+
+const router = express.Router();
+
+router.use(protect);
+
+router
+  .route('/')
+  .get(getFiles)
+  .post(createFile);
+
+router.post('/upload', uploadMiddleware, uploadFile);
+
+router
+  .route('/:id')
+  .delete(deleteFile);
+
+export default router;

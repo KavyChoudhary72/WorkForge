@@ -88,31 +88,46 @@ export function DataProvider({ children }) {
     } catch {}
   }, []);
 
-  // Fetch all real database records from Express API
+  // Fetch real database records concurrently in parallel with fast-fail fallback
   const fetchBackendData = async () => {
     try {
       if (!apiFetch) return;
 
-      // 1. Fetch Clients
-      const { res: resCli, data: dataCli } = await apiFetch('/clients');
-      if (resCli.ok && Array.isArray(dataCli)) {
-        setClients(dataCli.map(c => ({ ...c, id: c._id || c.id })));
+      const endpoints = [
+        apiFetch('/clients'),
+        apiFetch('/projects'),
+        apiFetch('/tasks'),
+        apiFetch('/invoices'),
+        apiFetch('/timelogs'),
+        apiFetch('/files'),
+        apiFetch('/notifications'),
+        apiFetch('/users'),
+        apiFetch('/activity'),
+        currentUser?.role === 'SUPER_ADMIN' ? apiFetch('/admin/organizations') : Promise.resolve({ res: { ok: false } })
+      ];
+
+      const results = await Promise.allSettled(endpoints);
+      const [resCli, resProj, resTsk, resInv, resTime, resFile, resNotif, resUser, resAct, resOrg] = results.map(r => 
+        r.status === 'fulfilled' ? r.value : { res: { ok: false }, data: null }
+      );
+
+      // 1. Clients
+      if (resCli.res?.ok && Array.isArray(resCli.data)) {
+        setClients(resCli.data.map(c => ({ ...c, id: c._id || c.id })));
       }
 
-      // 2. Fetch Projects
-      const { res: resProj, data: dataProj } = await apiFetch('/projects');
-      if (resProj.ok && Array.isArray(dataProj)) {
-        setProjects(dataProj.map(p => ({
+      // 2. Projects
+      if (resProj.res?.ok && Array.isArray(resProj.data)) {
+        setProjects(resProj.data.map(p => ({
           ...p,
           id: p._id || p.id,
           clientName: p.clientId?.name || p.clientName || 'Key Account'
         })));
       }
 
-      // 3. Fetch Tasks
-      const { res: resTsk, data: dataTsk } = await apiFetch('/tasks');
-      if (resTsk.ok && Array.isArray(dataTsk)) {
-        setTasks(dataTsk.map(t => ({
+      // 3. Tasks
+      if (resTsk.res?.ok && Array.isArray(resTsk.data)) {
+        setTasks(resTsk.data.map(t => ({
           ...t,
           id: t._id || t.id,
           projectName: t.projectId?.name || t.projectName || 'Active Project',
@@ -120,10 +135,9 @@ export function DataProvider({ children }) {
         })));
       }
 
-      // 4. Fetch Invoices
-      const { res: resInv, data: dataInv } = await apiFetch('/invoices');
-      if (resInv.ok && Array.isArray(dataInv)) {
-        setInvoices(dataInv.map(i => ({
+      // 4. Invoices
+      if (resInv.res?.ok && Array.isArray(resInv.data)) {
+        setInvoices(resInv.data.map(i => ({
           ...i,
           id: i._id || i.id,
           clientName: i.clientId?.name || i.clientName || 'Key Account',
@@ -135,34 +149,29 @@ export function DataProvider({ children }) {
         })));
       }
 
-      // 5. Fetch TimeLogs
-      const { res: resTime, data: dataTime } = await apiFetch('/timelogs');
-      if (resTime.ok && Array.isArray(dataTime)) {
-        setTimeLogs(dataTime.map(t => ({ ...t, id: t._id || t.id })));
+      // 5. TimeLogs
+      if (resTime.res?.ok && Array.isArray(resTime.data)) {
+        setTimeLogs(resTime.data.map(t => ({ ...t, id: t._id || t.id })));
       }
 
-      // 6. Fetch Files
-      const { res: resFile, data: dataFile } = await apiFetch('/files');
-      if (resFile.ok && Array.isArray(dataFile)) {
-        setFiles(dataFile.map(f => ({ ...f, id: f._id || f.id })));
+      // 6. Files
+      if (resFile.res?.ok && Array.isArray(resFile.data)) {
+        setFiles(resFile.data.map(f => ({ ...f, id: f._id || f.id })));
       }
 
-      // 7. Fetch Notifications
-      const { res: resNotif, data: dataNotif } = await apiFetch('/notifications');
-      if (resNotif.ok && Array.isArray(dataNotif)) {
-        setNotifications(dataNotif.map(n => ({ ...n, id: n._id || n.id })));
+      // 7. Notifications
+      if (resNotif.res?.ok && Array.isArray(resNotif.data)) {
+        setNotifications(resNotif.data.map(n => ({ ...n, id: n._id || n.id })));
       }
 
-      // 8. Fetch Users
-      const { res: resUser, data: dataUser } = await apiFetch('/users');
-      if (resUser.ok && Array.isArray(dataUser)) {
-        setTeamMembers(dataUser.map(u => ({ ...u, id: u._id || u.id })));
+      // 8. Users
+      if (resUser.res?.ok && Array.isArray(resUser.data)) {
+        setTeamMembers(resUser.data.map(u => ({ ...u, id: u._id || u.id })));
       }
 
-      // 9. Fetch Activity Logs
-      const { res: resAct, data: dataAct } = await apiFetch('/activity');
-      if (resAct.ok && Array.isArray(dataAct)) {
-        setActivityLogs(dataAct.map(a => {
+      // 9. Activity Logs
+      if (resAct.res?.ok && Array.isArray(resAct.data)) {
+        setActivityLogs(resAct.data.map(a => {
           const rawDate = a.createdAt ? new Date(a.createdAt) : new Date();
           const isoStr = rawDate.toISOString(); 
           const datePart = isoStr.split('T')[0];
@@ -177,15 +186,12 @@ export function DataProvider({ children }) {
         }));
       }
 
-      // 10. Fetch Organizations (Super Admin only)
-      if (currentUser?.role === 'SUPER_ADMIN') {
-        const { res: resOrg, data: dataOrg } = await apiFetch('/admin/organizations');
-        if (resOrg.ok && Array.isArray(dataOrg)) {
-          setOrganizations(dataOrg.map(o => ({ ...o, id: o._id || o.id })));
-        }
+      // 10. Organizations (Super Admin only)
+      if (resOrg.res?.ok && Array.isArray(resOrg.data)) {
+        setOrganizations(resOrg.data.map(o => ({ ...o, id: o._id || o.id })));
       }
     } catch (err) {
-      console.warn('[DataContext Warning] Failed to fetch real database records, keeping local cache fallback.', err);
+      console.warn('[DataContext Warning] Preserving local cache fallback:', err.message);
     }
   };
 

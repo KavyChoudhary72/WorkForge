@@ -108,7 +108,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Helper for API fetch calls with credentials
+  // Helper for API fetch calls with credentials and 3.5s fast-fail timeout
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const defaultHeaders = { 'Content-Type': 'application/json' };
     const token = authToken || localStorage.getItem('nexus_token');
@@ -116,15 +116,26 @@ export function AuthProvider({ children }) {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
     }
 
-    const config = {
-      ...options,
-      headers: { ...defaultHeaders, ...options.headers },
-      credentials: 'include'
-    };
+    const controller = new AbortController();
+    const timeoutDuration = options.timeout || 3500;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await res.json().catch(() => ({}));
-    return { res, data };
+    try {
+      const config = {
+        ...options,
+        headers: { ...defaultHeaders, ...options.headers },
+        credentials: 'include',
+        signal: controller.signal
+      };
+
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, config);
+      clearTimeout(timeoutId);
+      const data = await res.json().catch(() => ({}));
+      return { res, data };
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
   }, [authToken]);
 
   // Silent Token Refresh

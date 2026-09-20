@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 
@@ -9,26 +9,28 @@ import GlobalSearchModal from './components/common/GlobalSearchModal';
 import InactivityModal from './components/common/InactivityModal';
 import PlanChooserModal from './components/common/PlanChooserModal';
 
-// Pages
+// Primary Eager Pages
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
-import AdminAuthPage from './pages/AdminAuthPage';
 import DashboardPage from './pages/DashboardPage';
-import OrganizationMgmtPage from './pages/OrganizationMgmtPage';
 import ClientMgmtPage from './pages/ClientMgmtPage';
 import ProjectMgmtPage from './pages/ProjectMgmtPage';
 import TaskMgmtPage from './pages/TaskMgmtPage';
-import TimeTrackingPage from './pages/TimeTrackingPage';
-import InvoiceMgmtPage from './pages/InvoiceMgmtPage';
-import FileManagerPage from './pages/FileManagerPage';
-import TeamMgmtPage from './pages/TeamMgmtPage';
-import CalendarPage from './pages/CalendarPage';
-import ActivityLogsPage from './pages/ActivityLogsPage';
-import ReportsPage from './pages/ReportsPage';
-import AiHubPage from './pages/AiHubPage';
-import IntegrationsPage from './pages/IntegrationsPage';
-import SettingsPage from './pages/SettingsPage';
-import ProfilePage from './pages/ProfilePage';
+
+// Code-Split Lazy Loaded Secondary & Heavy Pages
+const AdminAuthPage = lazy(() => import('./pages/AdminAuthPage'));
+const OrganizationMgmtPage = lazy(() => import('./pages/OrganizationMgmtPage'));
+const TimeTrackingPage = lazy(() => import('./pages/TimeTrackingPage'));
+const InvoiceMgmtPage = lazy(() => import('./pages/InvoiceMgmtPage'));
+const FileManagerPage = lazy(() => import('./pages/FileManagerPage'));
+const TeamMgmtPage = lazy(() => import('./pages/TeamMgmtPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const ActivityLogsPage = lazy(() => import('./pages/ActivityLogsPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const AiHubPage = lazy(() => import('./pages/AiHubPage'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 import { SocketProvider } from './context/SocketContext';
 
 function AppContent() {
@@ -142,7 +144,7 @@ function AppContent() {
   // 1. Secret Super Admin URL handling (/admin/login)
   if (viewState === 'admin' || isSecretAdminRoute(pathname)) {
     return (
-      <>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-900"><div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>}>
         <AdminAuthPage
           onAdminLoginSuccess={() => {
             setActivePage('organizations');
@@ -159,7 +161,7 @@ function AppContent() {
             setAuthMode('login');
           }}
         />
-      </>
+      </Suspense>
     );
   }
 
@@ -320,31 +322,37 @@ function AppContent() {
 
         {/* Scrollable Viewport */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activePage === 'dashboard' && (
-            <DashboardPage
-              setActivePage={setActivePage}
-              onOpenPlanChooser={() => setShowPlanChooserModal(true)}
-            />
-          )}
-          {activePage === 'organizations' && <OrganizationMgmtPage />}
-          {activePage === 'clients' && <ClientMgmtPage />}
-          {activePage === 'projects' && <ProjectMgmtPage />}
-          {activePage === 'tasks' && <TaskMgmtPage />}
-          {activePage === 'timetracking' && <TimeTrackingPage />}
-          {activePage === 'invoices' && <InvoiceMgmtPage />}
-          {activePage === 'files' && <FileManagerPage />}
-          {activePage === 'team' && <TeamMgmtPage />}
-          {activePage === 'calendar' && <CalendarPage />}
-          {activePage === 'activity' && <ActivityLogsPage />}
-          {activePage === 'reports' && <ReportsPage />}
-          {activePage === 'integrations' && <IntegrationsPage />}
-          {activePage === 'settings' && (
-            <SettingsPage
-              onOpenPlanChooser={() => setShowPlanChooserModal(true)}
-            />
-          )}
-          {activePage === 'profile' && <ProfilePage />}
-          {activePage === 'aihub' && <AiHubPage />}
+          <Suspense fallback={
+            <div className="flex h-64 items-center justify-center text-slate-400">
+              <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          }>
+            {activePage === 'dashboard' && (
+              <DashboardPage
+                setActivePage={setActivePage}
+                onOpenPlanChooser={() => setShowPlanChooserModal(true)}
+              />
+            )}
+            {activePage === 'organizations' && <OrganizationMgmtPage />}
+            {activePage === 'clients' && <ClientMgmtPage />}
+            {activePage === 'projects' && <ProjectMgmtPage />}
+            {activePage === 'tasks' && <TaskMgmtPage />}
+            {activePage === 'timetracking' && <TimeTrackingPage />}
+            {activePage === 'invoices' && <InvoiceMgmtPage />}
+            {activePage === 'files' && <FileManagerPage />}
+            {activePage === 'team' && <TeamMgmtPage />}
+            {activePage === 'calendar' && <CalendarPage />}
+            {activePage === 'activity' && <ActivityLogsPage />}
+            {activePage === 'reports' && <ReportsPage />}
+            {activePage === 'integrations' && <IntegrationsPage />}
+            {activePage === 'settings' && (
+              <SettingsPage
+                onOpenPlanChooser={() => setShowPlanChooserModal(true)}
+              />
+            )}
+            {activePage === 'profile' && <ProfilePage />}
+            {activePage === 'aihub' && <AiHubPage />}
+          </Suspense>
         </main>
       </div>
 

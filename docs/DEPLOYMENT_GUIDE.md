@@ -49,6 +49,31 @@ WorkForge includes a ready-to-use `render.yaml` blueprint.
    - Build Command: `cd backend && npm install`
    - Start Command: `cd backend && npm start`
 
+### Option B: Deploy Backend via Railway (`railway.json` / `Procfile`)
+WorkForge includes automated `railway.json`, `Procfile`, and `nixpacks.toml` configurations.
+
+1. Log in to [Railway](https://railway.app).
+2. Click **New Project** -> **Deploy from GitHub repo**.
+3. Select your repository: `KavyChoudhary72/WorkForge`.
+4. (Optional but recommended) In Railway Service Settings -> **Source** -> Set **Root Directory** to `/backend` (or leave as root, as root-level fallback configs are pre-configured).
+5. In Railway Service -> **Variables**, add your environment variables:
+   - `NODE_ENV`: `production`
+   - `PORT`: `5000` (Railway injects this automatically, but setting 5000 is good fallback)
+   - `MONGO_URI`: Your MongoDB Atlas connection string
+   - `JWT_SECRET`: High-entropy access token secret (min 32 characters)
+   - `REFRESH_TOKEN_SECRET`: High-entropy refresh token secret (min 32 characters)
+   - `CLIENT_URL`: Your Vercel frontend URL (e.g. `https://work-forge.vercel.app`)
+   - `CLOUDINARY_CLOUD_NAME`: Your Cloudinary Cloud Name
+   - `CLOUDINARY_API_KEY`: Your Cloudinary API Key
+   - `CLOUDINARY_API_SECRET`: Your Cloudinary API Secret
+   - `RAZORPAY_KEY_ID`: `rzp_test_...` (or live)
+   - `RAZORPAY_SECRET`: Your Razorpay Secret
+   - `GEMINI_API_KEY`: Your Gemini API key
+6. Railway will automatically build via Nixpacks and deploy with a public domain (e.g. `https://workforge-production.up.railway.app`).
+7. Update your Vercel frontend environment variable:
+   - `VITE_API_BASE_URL`: `https://workforge-production.up.railway.app/api`
+   - `VITE_SOCKET_URL`: `https://workforge-production.up.railway.app`
+
 ---
 
 ## 4. Frontend Deployment (Vercel)

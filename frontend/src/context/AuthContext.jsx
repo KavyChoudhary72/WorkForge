@@ -3,7 +3,10 @@ import { MOCK_USERS, MOCK_ORGANIZATIONS } from '../data/mockData';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = rawApiUrl.replace(/\/+$/, '').endsWith('/api')
+  ? rawApiUrl.replace(/\/+$/, '')
+  : `${rawApiUrl.replace(/\/+$/, '')}/api`;
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {

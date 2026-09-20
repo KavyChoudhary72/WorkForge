@@ -11,7 +11,9 @@ export const SocketProvider = ({ children }) => {
   const [realtimeNotification, setRealtimeNotification] = useState(null);
 
   useEffect(() => {
-    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const rawSocketUrl = import.meta.env.VITE_SOCKET_URL ||
+      (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '').replace(/\/api$/, '') : 'http://localhost:5000');
+    const SOCKET_URL = rawSocketUrl.replace(/\/+$/, '');
     const newSocket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],

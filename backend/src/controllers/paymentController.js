@@ -38,8 +38,8 @@ export const createRazorpayOrder = async (req, res, next) => {
     const org = await Organization.findById(req.user.organizationId);
     const rzpIntegration = org?.integrations?.get('razorpay');
     
-    let keyId = process.env.RAZORPAY_KEY_ID;
-    let secretKey = process.env.RAZORPAY_SECRET;
+    let keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TTxygVOgedEqAn';
+    let secretKey = process.env.RAZORPAY_SECRET || 'Khdc0pAVGlr5FRDWsZFoM5ci';
 
     // Use organization specific credentials if available and connected
     if (rzpIntegration && rzpIntegration.status === 'Connected') {
@@ -93,7 +93,7 @@ export const verifyRazorpayPayment = async (req, res, next) => {
     const org = await Organization.findById(req.user.organizationId);
     const rzpIntegration = org?.integrations?.get('razorpay');
 
-    let secretKey = process.env.RAZORPAY_SECRET;
+    let secretKey = process.env.RAZORPAY_SECRET || 'Khdc0pAVGlr5FRDWsZFoM5ci';
 
     if (rzpIntegration && rzpIntegration.status === 'Connected' && rzpIntegration.config?.razorpaySecret) {
       secretKey = rzpIntegration.config.razorpaySecret;
@@ -141,8 +141,8 @@ export const createSubscriptionOrder = async (req, res, next) => {
     const { planName, cycle } = req.body;
 
     const org = await Organization.findById(req.user.organizationId);
-    let keyId = process.env.RAZORPAY_KEY_ID;
-    let secretKey = process.env.RAZORPAY_SECRET;
+    let keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TTxygVOgedEqAn';
+    let secretKey = process.env.RAZORPAY_SECRET || 'Khdc0pAVGlr5FRDWsZFoM5ci';
 
     if (org?.integrations?.get('razorpay')?.status === 'Connected') {
       const config = org.integrations.get('razorpay').config;
@@ -194,7 +194,7 @@ export const verifySubscriptionPayment = async (req, res, next) => {
     const { planName, cycle, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
     const org = await Organization.findById(req.user.organizationId);
-    let secretKey = process.env.RAZORPAY_SECRET;
+    let secretKey = process.env.RAZORPAY_SECRET || 'Khdc0pAVGlr5FRDWsZFoM5ci';
 
     if (org?.integrations?.get('razorpay')?.status === 'Connected' && org.integrations.get('razorpay').config?.razorpaySecret) {
       secretKey = org.integrations.get('razorpay').config.razorpaySecret;

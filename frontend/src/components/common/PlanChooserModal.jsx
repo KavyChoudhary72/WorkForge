@@ -136,7 +136,7 @@ export default function PlanChooserModal({
 
       const rawPrice = plan.prices[cycle] || 1999;
       const finalAmount = amount || (rawPrice * 100);
-      const finalKey = keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_1DP5mmOlF5G5ag';
+      const finalKey = keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TTxygVOgedEqAn';
 
       const options = {
         key: finalKey,

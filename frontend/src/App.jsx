@@ -35,7 +35,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 import { SocketProvider } from './context/SocketContext';
 
 function AppContent() {
-  const { currentUser, getRoleDefaultPath, logout, apiFetch, silentRefresh, updateCurrentUser } = useAuth();
+  const { currentUser, currentOrg, getRoleDefaultPath, logout, apiFetch, silentRefresh, updateCurrentUser } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);

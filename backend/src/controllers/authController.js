@@ -1009,3 +1009,48 @@ export const choosePlan = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateOrganizationLogo = async (req, res, next) => {
+  try {
+    const { logo } = req.body;
+    const orgId = req.user?.organizationId;
+    if (!orgId) {
+      return res.status(400).json({ message: 'User does not belong to any organization.' });
+    }
+
+    let finalLogoUrl = logo || '';
+
+    // If logo is base64 and Cloudinary is configured, upload to Cloudinary!
+    if (logo && logo.startsWith('data:image')) {
+      const { isCloudinaryConfigured, uploadBase64ToCloudinary } = await import('../config/cloudinary.js');
+      if (isCloudinaryConfigured()) {
+        try {
+          const cldRes = await uploadBase64ToCloudinary(logo, `workforge/organizations/${orgId}/logo`);
+          finalLogoUrl = cldRes.url;
+        } catch (cldErr) {
+          console.warn('[Cloudinary] Logo upload fallback to base64:', cldErr.message);
+        }
+      }
+    }
+
+    const org = await Organization.findByIdAndUpdate(
+      orgId,
+      { logo: finalLogoUrl },
+      { new: true }
+    );
+
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found.' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Organization logo updated successfully.',
+      logo: finalLogoUrl,
+      organization: org
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

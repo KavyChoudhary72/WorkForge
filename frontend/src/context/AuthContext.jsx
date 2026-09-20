@@ -287,7 +287,7 @@ export function AuthProvider({ children }) {
   };
 
   // Update Company Logo URL for Active Organization
-  const updateCompanyLogo = (logoUrl) => {
+  const updateCompanyLogo = async (logoUrl) => {
     const updatedOrg = { ...currentOrg, logo: logoUrl };
     setCurrentOrg(updatedOrg);
     localStorage.setItem('nexus_org', JSON.stringify(updatedOrg));
@@ -295,6 +295,20 @@ export function AuthProvider({ children }) {
       const updatedUser = { ...currentUser, organizationLogo: logoUrl };
       setCurrentUser(updatedUser);
       localStorage.setItem('nexus_user', JSON.stringify(updatedUser));
+    }
+
+    try {
+      const { res, data } = await apiFetch('/auth/organization-logo', {
+        method: 'PUT',
+        body: JSON.stringify({ logo: logoUrl })
+      });
+      if (res.ok && data?.logo) {
+        const persistedOrg = { ...currentOrg, logo: data.logo };
+        setCurrentOrg(persistedOrg);
+        localStorage.setItem('nexus_org', JSON.stringify(persistedOrg));
+      }
+    } catch (err) {
+      console.warn('Backend logo sync failed, preserved locally:', err.message);
     }
   };
 

@@ -16,7 +16,8 @@ import {
   createEmployee,
   inviteClient,
   activateTrial,
-  choosePlan
+  choosePlan,
+  updateOrganizationLogo
 } from '../controllers/authController.js';
 import { protect, requireRole } from '../middleware/authMiddleware.js';
 
@@ -45,6 +46,7 @@ router.post('/create-employee', protect, requireRole('COMPANY_ADMIN', 'SUPER_ADM
 router.post('/invite-client', protect, requireRole('COMPANY_ADMIN', 'SUPER_ADMIN'), inviteClient);
 router.post('/activate-trial', protect, activateTrial);
 router.post('/choose-plan', protect, choosePlan);
+router.put('/organization-logo', protect, updateOrganizationLogo);
 
 // Fetch current user details
 router.get('/me', protect, (req, res) => {

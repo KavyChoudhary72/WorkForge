@@ -23,11 +23,12 @@ export const SocketProvider = ({ children }) => {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       autoConnect: true,
-      reconnectionAttempts: 5,
-      timeout: 8000
+      reconnectionAttempts: 2,
+      reconnectionDelay: 10000,
+      timeout: 5000
     });
 
-    newSocket.on('connect_error', () => {
+    newSocket.on('connect_error', (err) => {
       setIsConnected(false);
     });
 

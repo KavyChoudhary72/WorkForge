@@ -37,6 +37,11 @@ export default function PlanChooserModal({
       description: 'For individuals and small growing teams.',
       price: cycle === 'monthly' ? '₹999' : cycle === 'quarterly' ? '₹2,549' : '₹8,999',
       billing: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/3 mo' : '/yr',
+      prices: {
+        monthly: 999,
+        quarterly: 2549,
+        annually: 8999
+      },
       features: [
         'Up to 10 Projects & 15 Clients',
         'Visual Task Boards & Checklists',
@@ -52,6 +57,11 @@ export default function PlanChooserModal({
       description: 'Best for businesses managing multiple clients.',
       price: cycle === 'monthly' ? '₹2,499' : cycle === 'quarterly' ? '₹6,499' : '₹22,499',
       billing: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/3 mo' : '/yr',
+      prices: {
+        monthly: 2499,
+        quarterly: 6499,
+        annually: 22499
+      },
       features: [
         'Unlimited Projects & Clients',
         'Online Payment Gateway (Razorpay)',
@@ -68,6 +78,11 @@ export default function PlanChooserModal({
       description: 'Advanced capacity for scaling companies.',
       price: cycle === 'monthly' ? '₹4,999' : cycle === 'quarterly' ? '₹12,999' : '₹44,999',
       billing: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/3 mo' : '/yr',
+      prices: {
+        monthly: 4999,
+        quarterly: 12999,
+        annually: 44999
+      },
       features: [
         'Everything in Pro Plan',
         'Unlimited Team Members',
@@ -134,7 +149,13 @@ export default function PlanChooserModal({
         console.warn('[Razorpay] Backend order generation unreachable, using resilient direct checkout:', err.message);
       }
 
-      const rawPrice = plan.prices[cycle] || 1999;
+      const planPrices = plan?.prices || {
+        starter: { monthly: 999, quarterly: 2549, annually: 8999 },
+        pro: { monthly: 2499, quarterly: 6499, annually: 22499 },
+        enterprise: { monthly: 4999, quarterly: 12999, annually: 44999 }
+      }[plan?.id || 'pro'] || { monthly: 2499, quarterly: 6499, annually: 22499 };
+
+      const rawPrice = planPrices[cycle] || planPrices.monthly || 2499;
       const finalAmount = amount || (rawPrice * 100);
       const finalKey = keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TeHTdeeDYTH92D';
 

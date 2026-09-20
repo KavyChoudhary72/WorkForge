@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Crown, Zap, Shield, CreditCard, Sparkles } from 'lucide-react';
+import { X, Check, Crown, Shield, CreditCard, Loader2, ArrowLeft } from 'lucide-react';
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -17,6 +17,7 @@ const loadRazorpayScript = () => {
 
 export default function PlanChooserModal({
   onClose,
+  onBackToLogin,
   isExpired = false,
   showTrialOption = false,
   apiFetch,
@@ -33,15 +34,13 @@ export default function PlanChooserModal({
     {
       id: 'starter',
       name: 'Starter Plan',
-      description: 'Ideal for small teams and independent contractors.',
+      description: 'For individuals and small growing teams.',
       price: cycle === 'monthly' ? '₹999' : cycle === 'quarterly' ? '₹2,549' : '₹8,999',
-      billing: cycle === 'monthly' ? '/ month' : cycle === 'quarterly' ? '/ 3 months' : '/ year',
-      amount: cycle === 'monthly' ? 999 : cycle === 'quarterly' ? 2549 : 8999,
+      billing: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/3 mo' : '/yr',
       features: [
         'Up to 10 Projects & 15 Clients',
-        'Visual Task Boards',
-        'Basic Invoices & Billing',
-        'Time Tracking & Timesheets',
+        'Visual Task Boards & Checklists',
+        'Invoicing & Time Tracking',
         '10 GB Cloud Storage',
         'Standard Email Support'
       ],
@@ -50,17 +49,15 @@ export default function PlanChooserModal({
     {
       id: 'pro',
       name: 'Pro Plan',
-      description: 'Best for growing businesses managing multiple clients.',
+      description: 'Best for businesses managing multiple clients.',
       price: cycle === 'monthly' ? '₹2,499' : cycle === 'quarterly' ? '₹6,499' : '₹22,499',
-      billing: cycle === 'monthly' ? '/ month' : cycle === 'quarterly' ? '/ 3 months' : '/ year',
-      amount: cycle === 'monthly' ? 2499 : cycle === 'quarterly' ? 6499 : 22499,
+      billing: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/3 mo' : '/yr',
       features: [
         'Unlimited Projects & Clients',
         'Online Payment Gateway (Razorpay)',
         'Smart AI Assistant Hub',
         'WhatsApp & Email Notifications',
-        '100 GB Cloud Storage',
-        'Detailed Reports & PDF Export',
+        '100 GB Cloud Storage Space',
         'Priority Customer Support'
       ],
       popular: true
@@ -68,61 +65,27 @@ export default function PlanChooserModal({
     {
       id: 'enterprise',
       name: 'Enterprise Plan',
-      description: 'Full capabilities for scaling agencies and large companies.',
+      description: 'Advanced capacity for scaling companies.',
       price: cycle === 'monthly' ? '₹4,999' : cycle === 'quarterly' ? '₹12,999' : '₹44,999',
-      billing: cycle === 'monthly' ? '/ month' : cycle === 'quarterly' ? '/ 3 months' : '/ year',
-      amount: cycle === 'monthly' ? 4999 : cycle === 'quarterly' ? 12999 : 44999,
+      billing: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/3 mo' : '/yr',
       features: [
         'Everything in Pro Plan',
         'Unlimited Team Members',
-        'Custom Invoices & Company Branding',
-        '500 GB Cloud Storage Space',
-        'Advanced Analytics & Audit Logs',
-        'Dedicated Account Manager',
+        'Custom Invoices & Branding',
+        '500 GB Storage Quota',
         '24/7 VIP Phone & Chat Support'
       ],
       popular: false
     }
   ];
 
-  // 1. Instant 1-Click Manual Upgrade (Reliable & Immediate)
-  const handleInstantUpgrade = async (plan) => {
-    setLoadingPlan(plan.id);
-    try {
-      const { res, data } = await apiFetch('/auth/choose-plan', {
-        method: 'POST',
-        body: JSON.stringify({
-          plan: plan.name,
-          cycle,
-          paymentMethod: 'Manual Direct Purchase'
-        })
-      });
-
-      if (res.ok && data.user) {
-        if (updateCurrentUser) updateCurrentUser(data.user);
-        if (silentRefresh) await silentRefresh();
-        setSuccessMessage(`Success! You have purchased the ${plan.name} (${cycle}).`);
-        setTimeout(() => {
-          if (onClose) onClose();
-        }, 1500);
-      } else {
-        alert(data.message || 'Failed to process plan purchase.');
-      }
-    } catch (err) {
-      console.error('Instant upgrade failed', err);
-      alert('Network error while processing purchase.');
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  // 2. Online Payment Gateway (Razorpay)
+  // Direct Razorpay Payment Gateway
   const handleRazorpayPayment = async (plan) => {
     setLoadingPlan(plan.id);
     try {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
-        alert('Payment gateway script failed to load. Please check your internet connection.');
+        alert('Razorpay payment gateway failed to load. Please check your internet connection.');
         setLoadingPlan(null);
         return;
       }
@@ -133,14 +96,7 @@ export default function PlanChooserModal({
       });
 
       if (!orderRes.ok) {
-        // If order creation fails (e.g., test credentials issue), give option to use instant upgrade
-        const confirmFallback = window.confirm(
-          (orderData.message || 'Online payment gateway is temporarily unavailable.') +
-          '\n\nWould you like to activate the plan directly using Instant 1-Click Purchase instead?'
-        );
-        if (confirmFallback) {
-          await handleInstantUpgrade(plan);
-        }
+        alert(orderData.message || 'Unable to initialize Razorpay checkout.');
         setLoadingPlan(null);
         return;
       }
@@ -150,37 +106,38 @@ export default function PlanChooserModal({
       const options = {
         key: keyId,
         amount,
-        currency,
-        name: 'WorkForge SaaS Platform',
-        description: `Purchase ${plan.name} (${cycle})`,
+        currency: currency || 'INR',
+        name: 'WorkForge',
+        description: `Upgrade to ${plan.name} (${cycle})`,
         order_id: orderId,
         handler: async function (response) {
-          const { res: verifyRes, data: verifyData } = await apiFetch('/payments/subscription-verify', {
-            method: 'POST',
-            body: JSON.stringify({
-              planName: plan.name,
-              cycle,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature
-            })
-          });
+          try {
+            const { res: verifyRes, data: verifyData } = await apiFetch('/payments/subscription-verify', {
+              method: 'POST',
+              body: JSON.stringify({
+                planName: plan.name,
+                cycle,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              })
+            });
 
-          if (verifyRes.ok && verifyData.success && verifyData.user) {
-            if (updateCurrentUser) updateCurrentUser(verifyData.user);
-            if (silentRefresh) await silentRefresh();
-            setSuccessMessage(`Payment verified! You are now subscribed to ${plan.name}.`);
-            setTimeout(() => {
-              if (onClose) onClose();
-            }, 1500);
-          } else {
-            alert(verifyData.message || 'Payment signature verification failed.');
+            if (verifyRes.ok && verifyData.success && verifyData.user) {
+              if (updateCurrentUser) updateCurrentUser(verifyData.user);
+              if (silentRefresh) await silentRefresh();
+              setSuccessMessage(`Payment confirmed! You are now on ${plan.name}.`);
+              setTimeout(() => {
+                if (onClose) onClose();
+              }, 1200);
+            } else {
+              alert(verifyData.message || 'Payment signature verification failed.');
+            }
+          } catch (err) {
+            alert('Error verifying payment.');
+          } finally {
+            setLoadingPlan(null);
           }
-          setLoadingPlan(null);
-        },
-        prefill: {
-          name: '',
-          email: ''
         },
         theme: {
           color: '#2563eb'
@@ -195,7 +152,7 @@ export default function PlanChooserModal({
       const paymentObject = new window.Razorpay(options);
       paymentObject.open();
     } catch (error) {
-      console.error('Error during online payment', error);
+      console.error('Error during payment', error);
       alert('An error occurred during payment processing.');
       setLoadingPlan(null);
     }
@@ -226,58 +183,71 @@ export default function PlanChooserModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isExpired && !showTrialOption && onClose) {
           onClose();
         }
       }}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full p-6 sm:p-8 shadow-2xl relative space-y-6 my-8 transition-all">
+      {/* Compact Widget Container with Glassmorphism */}
+      <div className="relative w-full max-w-4xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-white/40 dark:border-slate-800/80 rounded-2xl shadow-2xl p-5 sm:p-6 transition-all my-auto">
         
-        {/* Close Button */}
-        {!isExpired && !showTrialOption && (
-          <button
-            onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-2 bg-slate-100 dark:bg-slate-800 rounded-full cursor-pointer"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+        {/* Top Controls: Back to Login (if provided) and Close Button */}
+        <div className="flex items-center justify-between mb-3">
+          {onBackToLogin ? (
+            <button
+              onClick={onBackToLogin}
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white px-2.5 py-1 rounded-lg bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Login</span>
+            </button>
+          ) : (
+            <div />
+          )}
+
+          {!isExpired && !showTrialOption && onClose && (
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
         {/* Success Alert */}
         {successMessage && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-semibold flex items-center justify-center space-x-2">
-            <Check className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center justify-center space-x-1.5">
+            <Check className="w-4 h-4 flex-shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
 
-        {/* Modal Header */}
-        <div className="text-center max-w-xl mx-auto space-y-2">
-          <div className="flex justify-center">
-            <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center space-x-1.5">
-              <Crown className="w-3.5 h-3.5 text-amber-500" />
-              <span>Subscription Plans</span>
-            </span>
+        {/* Header Title & Billing Cycle Toggle */}
+        <div className="text-center space-y-1.5 mb-4">
+          <div className="flex items-center justify-center space-x-1.5 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <Crown className="w-3.5 h-3.5 text-amber-500" />
+            <span>Choose Your Plan</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-            Choose the Perfect Plan for Your Business
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Flexible Plans for Every Stage
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Upgrade anytime to unlock higher team limits, online client billing, smart AI tools, and full priority support.
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Select a plan to unlock full workspace collaboration and smart tools.
           </p>
 
-          {/* Billing Cycle Switcher */}
-          <div className="pt-3 flex justify-center">
-            <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">
+          {/* Compact Billing Cycle Switcher */}
+          <div className="pt-2 flex justify-center">
+            <div className="inline-flex p-0.5 bg-slate-100/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setCycle('monthly')}
-                className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                   cycle === 'monthly'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -286,33 +256,33 @@ export default function PlanChooserModal({
               <button
                 type="button"
                 onClick={() => setCycle('quarterly')}
-                className={`px-4 py-1.5 rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
+                className={`px-3 py-1 rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
                   cycle === 'quarterly'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span>Quarterly</span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded-full">Save 15%</span>
+                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/80 px-1 rounded">15% off</span>
               </button>
               <button
                 type="button"
                 onClick={() => setCycle('annually')}
-                className={`px-4 py-1.5 rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
+                className={`px-3 py-1 rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
                   cycle === 'annually'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span>Annually</span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded-full">Save 25%</span>
+                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/80 px-1 rounded">25% off</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Plan Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+        {/* 3 Compact Plan Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           {plans.map((p) => {
             const isCurrent = isCurrentPlan(p.name);
             const isLoading = loadingPlan === p.id;
@@ -320,115 +290,105 @@ export default function PlanChooserModal({
             return (
               <div
                 key={p.id}
-                className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 flex flex-col justify-between border relative transition-all ${
+                className={`rounded-xl p-4 flex flex-col justify-between transition-all relative ${
                   p.popular
-                    ? 'border-blue-500 shadow-xl ring-2 ring-blue-500/20 dark:border-blue-500'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                    ? 'bg-blue-50/60 dark:bg-blue-950/30 border-2 border-blue-500 shadow-md ring-1 ring-blue-500/20'
+                    : 'bg-white/60 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
                 {p.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-md">
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
                     Most Popular
                   </span>
                 )}
 
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">{p.name}</h3>
-                      {isCurrent && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                          Current Plan
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 min-h-[32px]">{p.description}</p>
-                    
-                    <div className="flex items-baseline space-x-1 pt-2">
-                      <span className="text-3xl font-black text-slate-900 dark:text-slate-100">{p.price}</span>
-                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">{p.billing}</span>
-                    </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">{p.name}</h3>
+                    {isCurrent && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{p.description}</p>
+                  
+                  {/* Price */}
+                  <div className="flex items-baseline space-x-1 mt-2.5 pb-2 border-b border-slate-200/80 dark:border-slate-700/60">
+                    <span className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{p.price}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{p.billing}</span>
                   </div>
 
-                  <hr className="border-slate-200 dark:border-slate-800" />
-
-                  <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  {/* Feature Bullets */}
+                  <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300 font-medium pt-2.5">
                     {p.features.map((feat) => (
-                      <li key={feat} className="flex items-start space-x-2">
-                        <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <li key={feat} className="flex items-start space-x-1.5 leading-snug">
+                        <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Purchase Actions */}
-                <div className="pt-6 space-y-2">
+                {/* Single Buy Now Button -> Razorpay */}
+                <div className="pt-3 mt-1">
                   <button
                     type="button"
                     disabled={isLoading || isCurrent}
-                    onClick={() => handleInstantUpgrade(p)}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                    onClick={() => handleRazorpayPayment(p)}
+                    className={`w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs ${
                       isCurrent
                         ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                         : p.popular
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30'
-                        : 'bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 shadow-sm'
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm'
+                        : 'bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900'
                     }`}
                   >
-                    <Zap className="w-4 h-4 text-amber-300" />
-                    <span>
-                      {isCurrent
-                        ? 'Active Plan'
-                        : isLoading
-                        ? 'Activating...'
-                        : 'Instant Purchase (1-Click)'}
-                    </span>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Connecting Razorpay...</span>
+                      </>
+                    ) : isCurrent ? (
+                      <span>Current Plan</span>
+                    ) : (
+                      <>
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>Buy Now</span>
+                      </>
+                    )}
                   </button>
-
-                  {!isCurrent && (
-                    <button
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => handleRazorpayPayment(p)}
-                      className="w-full py-2 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-xl text-[11px] font-semibold transition-colors flex items-center justify-center space-x-1.5 cursor-pointer border border-slate-200 dark:border-slate-800"
-                    >
-                      <CreditCard className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Pay with Cards / UPI</span>
-                    </button>
-                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Free Trial Button (Only shown if trial not yet activated) */}
+        {/* Optional Free Trial Button */}
         {showTrialOption && (
-          <div className="pt-4 text-center border-t border-slate-100 dark:border-slate-800 flex flex-col items-center space-y-3">
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Want to test the platform first? You can start with our 7-day free trial.
-            </div>
+          <div className="mt-3 pt-2 text-center border-t border-slate-200/80 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+            <span>Want to test first? </span>
             <button
+              type="button"
               disabled={activatingTrial}
               onClick={handleStartTrial}
-              className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all border border-slate-300 dark:border-slate-700 cursor-pointer"
+              className="text-blue-600 dark:text-blue-400 font-bold underline hover:text-blue-700 cursor-pointer ml-1"
             >
-              {activatingTrial ? 'Starting Trial...' : 'Start 7-Day Free Trial (No Card Needed)'}
+              {activatingTrial ? 'Activating...' : 'Start 7-Day Free Trial (No Card Needed)'}
             </button>
           </div>
         )}
 
-        {/* Friendly Reassurance Footer */}
-        <div className="text-center text-xs text-slate-400 dark:text-slate-500 pt-2 flex items-center justify-center space-x-4">
+        {/* Minimal Footer Note */}
+        <div className="text-center text-[10px] text-slate-400 dark:text-slate-500 pt-3 flex items-center justify-center space-x-3">
           <span className="flex items-center space-x-1">
-            <Shield className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Cancel anytime with 1 click</span>
+            <Shield className="w-3 h-3 text-emerald-500" />
+            <span>Secure Razorpay Gateway</span>
           </span>
           <span>•</span>
-          <span>Instant workspace activation</span>
+          <span>Instant Activation</span>
           <span>•</span>
-          <span>256-bit secure checkout</span>
+          <span>Cancel Anytime</span>
         </div>
       </div>
     </div>

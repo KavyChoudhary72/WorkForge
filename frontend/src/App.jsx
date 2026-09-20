@@ -233,25 +233,16 @@ function AppContent() {
     // 1. If trial is NOT activated and plan is None: block and require trial activation
     if (plan === 'None' && !trialActivated) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 text-white p-4 overflow-y-auto">
-          <div className="relative max-w-5xl w-full">
-            <PlanChooserModal
-              onClose={() => {}}
-              isExpired={false}
-              showTrialOption={true}
-              apiFetch={apiFetch}
-              silentRefresh={silentRefresh}
-              updateCurrentUser={updateCurrentUser}
-              currentPlan={plan}
-            />
-            <button
-              onClick={() => logout()}
-              className="absolute top-4 left-4 z-[110] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors inline-flex items-center space-x-1 bg-white dark:bg-slate-900 px-3.5 py-1.5 rounded-full border border-slate-300 dark:border-slate-800 shadow-sm"
-            >
-              <span>← Back to Login</span>
-            </button>
-          </div>
-        </div>
+        <PlanChooserModal
+          onClose={() => {}}
+          onBackToLogin={logout}
+          isExpired={false}
+          showTrialOption={true}
+          apiFetch={apiFetch}
+          silentRefresh={silentRefresh}
+          updateCurrentUser={updateCurrentUser}
+          currentPlan={plan}
+        />
       );
     }
 
@@ -293,8 +284,9 @@ function AppContent() {
           
           {showPlanChooserModal && (
             <PlanChooserModal
-              onClose={() => {}}
-              isExpired={true}
+              onClose={() => setShowPlanChooserModal(false)}
+              onBackToLogin={logout}
+              isExpired={false}
               showTrialOption={false}
               apiFetch={apiFetch}
               silentRefresh={silentRefresh}

@@ -156,9 +156,14 @@ export const createSubscriptionOrder = async (req, res, next) => {
       return res.status(400).json({ message: 'Razorpay API credentials are not configured.' });
     }
 
-    let amount = 2499; // Default Monthly
-    if (cycle === 'quarterly') amount = 6499;
-    else if (cycle === 'annually') amount = 22499;
+    let amount = 2499; // Default Pro Monthly
+    if (planName && planName.toLowerCase().includes('starter')) {
+      amount = cycle === 'quarterly' ? 2549 : cycle === 'annually' ? 8999 : 999;
+    } else if (planName && planName.toLowerCase().includes('enterprise')) {
+      amount = cycle === 'quarterly' ? 12999 : cycle === 'annually' ? 44999 : 4999;
+    } else {
+      amount = cycle === 'quarterly' ? 6499 : cycle === 'annually' ? 22499 : 2499;
+    }
 
     const razorpay = new Razorpay({
       key_id: keyId,
@@ -212,8 +217,13 @@ export const verifySubscriptionPayment = async (req, res, next) => {
 
     // Save payment details to Database
     let amount = 2499;
-    if (cycle === 'quarterly') amount = 6499;
-    else if (cycle === 'annually') amount = 22499;
+    if (planName && planName.toLowerCase().includes('starter')) {
+      amount = cycle === 'quarterly' ? 2549 : cycle === 'annually' ? 8999 : 999;
+    } else if (planName && planName.toLowerCase().includes('enterprise')) {
+      amount = cycle === 'quarterly' ? 12999 : cycle === 'annually' ? 44999 : 4999;
+    } else {
+      amount = cycle === 'quarterly' ? 6499 : cycle === 'annually' ? 22499 : 2499;
+    }
 
     await Payment.create({
       organizationId: req.user.organizationId,

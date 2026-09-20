@@ -63,6 +63,7 @@ export function OrgLogo({ name = 'Organization', src = '', size = 'md', classNam
   const [imgError, setImgError] = useState(false);
 
   const initials = getInitials(name);
+  const effectiveSrc = src || (name?.toLowerCase().includes('workforge') || name?.toLowerCase().includes('workspace') ? '/logo.png' : '');
 
   const sizeClasses = {
     sm: 'w-6 h-6 text-[10px] font-bold',
@@ -78,16 +79,16 @@ export function OrgLogo({ name = 'Organization', src = '', size = 'md', classNam
       className={`relative group ${isClickable ? 'cursor-pointer' : ''}`}
       title={isClickable ? `Click to crop & set custom logo for ${name}` : name}
     >
-      {src && !imgError ? (
+      {effectiveSrc && !imgError ? (
         <img
-          src={src}
+          src={effectiveSrc}
           alt={name}
           onError={() => setImgError(true)}
-          className={`${sizeClasses} rounded-xl object-cover ring-1 ring-slate-300 dark:ring-slate-700 ${className}`}
+          className={`${sizeClasses} rounded-xl object-cover ring-1 ring-slate-300 dark:ring-slate-700 shadow-sm ${className}`}
         />
       ) : (
         <div
-          className={`${sizeClasses} rounded-xl bg-gradient-to-br from-indigo-600 via-blue-600 to-slate-900 text-white font-black flex items-center justify-center shadow-md flex-shrink-0 tracking-wider ${className}`}
+          className={`${sizeClasses} rounded-xl bg-gradient-to-br from-orange-600 via-amber-600 to-slate-900 text-white font-black flex items-center justify-center shadow-md flex-shrink-0 tracking-wider ${className}`}
         >
           {initials}
         </div>

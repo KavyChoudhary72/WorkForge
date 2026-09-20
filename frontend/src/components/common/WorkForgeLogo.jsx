@@ -1,19 +1,26 @@
-import React from 'react';
-import { Flame, Hammer, Zap, Layers } from 'lucide-react';
+import React, { useState } from 'react';
 
-export default function WorkForgeLogo({ onClick, size = 'medium', className = '' }) {
-  const iconSizes = {
-    small: 'w-5 h-5',
-    medium: 'w-6 h-6',
-    large: 'w-8 h-8',
-    xlarge: 'w-10 h-10'
+export default function WorkForgeLogo({ 
+  onClick, 
+  size = 'medium', 
+  className = '',
+  showText = true,
+  onlyImage = false
+}) {
+  const [imgError, setImgError] = useState(false);
+
+  const emblemSizes = {
+    small: 'w-8 h-8',
+    medium: 'w-10 h-10',
+    large: 'w-14 h-14',
+    xlarge: 'w-20 h-20'
   };
 
   const textSizes = {
-    small: 'text-base',
-    medium: 'text-xl',
-    large: 'text-2xl',
-    xlarge: 'text-3xl'
+    small: 'text-lg',
+    medium: 'text-2xl',
+    large: 'text-3xl',
+    xlarge: 'text-4xl'
   };
 
   const handleLogoClick = (e) => {
@@ -25,36 +32,57 @@ export default function WorkForgeLogo({ onClick, size = 'medium', className = ''
     }
   };
 
+  if (onlyImage) {
+    return (
+      <img
+        src="/logo.png"
+        alt="WorkForge Logo"
+        onClick={handleLogoClick}
+        className={`${emblemSizes[size] || 'w-10 h-10'} rounded-full object-cover shadow-md shadow-orange-500/25 cursor-pointer hover:scale-105 transition-transform ${className}`}
+      />
+    );
+  }
+
   return (
     <div
       onClick={handleLogoClick}
-      className={`inline-flex items-center space-x-2.5 cursor-pointer group select-none ${className}`}
-      title="WorkForge - Go to Homepage"
+      className={`inline-flex items-center space-x-3 cursor-pointer group select-none ${className}`}
+      title="WorkForge - Enterprise Multi-Tenant Platform"
     >
-      {/* Dynamic Forge Badge with Zoho-inspired Coral Red + Royal Blue & Mint Accents */}
-      <div className={`relative flex items-center justify-center rounded-xl bg-gradient-to-tr from-red-600 via-rose-500 to-amber-500 text-white font-bold shadow-md shadow-red-500/25 group-hover:scale-105 transition-transform ${
-        size === 'small' ? 'w-8 h-8 p-1.5' : size === 'large' ? 'w-11 h-11 p-2' : size === 'xlarge' ? 'w-14 h-14 p-2.5' : 'w-10 h-10 p-2'
-      }`}>
-        <div className="relative flex items-center justify-center w-full h-full">
-          <Hammer className={`${iconSizes[size] || 'w-6 h-6'} text-white stroke-[2.5]`} />
-          <Flame className="w-3 h-3 text-amber-300 absolute -top-1 -right-1 animate-pulse" />
-        </div>
-      </div>
-
-      {/* Brand Text */}
-      <div className="flex flex-col">
-        <div className={`font-black tracking-tight ${textSizes[size] || 'text-xl'} flex items-center`}>
-          <span className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-            Work
-          </span>
-          <span className="text-red-600 dark:text-rose-500">Forge</span>
-        </div>
-        {size !== 'small' && (
-          <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 -mt-1">
-            Enterprise OS
-          </span>
+      {/* Official WorkForge Circular Badge */}
+      <div className={`relative flex-shrink-0 ${emblemSizes[size] || 'w-10 h-10'} rounded-full overflow-hidden shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform duration-200 ring-2 ring-orange-500/20`}>
+        {!imgError ? (
+          <img
+            src="/logo.png"
+            alt="WorkForge"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover rounded-full"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 text-white font-black flex items-center justify-center text-xs">
+            WF
+          </div>
         )}
       </div>
+
+      {/* Brand Typography */}
+      {showText && (
+        <div className="flex flex-col justify-center">
+          <div className={`font-black tracking-tight ${textSizes[size] || 'text-2xl'} leading-none flex items-center`}>
+            <span className="text-slate-900 dark:text-white font-extrabold">
+              Work
+            </span>
+            <span className="text-orange-500 dark:text-orange-400 font-extrabold">
+              Forge
+            </span>
+          </div>
+          {size !== 'small' && (
+            <span className="text-[9.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mt-1">
+              Enterprise Workspace
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

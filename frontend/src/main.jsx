@@ -14,6 +14,12 @@ const queryClient = new QueryClient({
   }
 });
 
+// Auto-reload if new production chunk hashes were deployed to Vercel
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>

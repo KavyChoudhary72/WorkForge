@@ -13,6 +13,17 @@ export default class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('[React ErrorBoundary Caught Error]:', error, errorInfo);
     this.setState({ errorInfo });
+
+    // Handle stale chunk after fresh deployment
+    const errMsg = (error?.message || error?.toString() || '').toLowerCase();
+    if (errMsg.includes('dynamically imported module') || errMsg.includes('loading chunk') || errMsg.includes('mime type')) {
+      const lastReload = sessionStorage.getItem('wf_chunk_reload');
+      const now = Date.now();
+      if (!lastReload || (now - parseInt(lastReload, 10)) > 8000) {
+        sessionStorage.setItem('wf_chunk_reload', now.toString());
+        window.location.reload();
+      }
+    }
   }
 
   handleReset = () => {

@@ -119,7 +119,7 @@ export default function DashboardPage({ setActivePage, onOpenPlanChooser }) {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           <button
             onClick={() => onOpenPlanChooser && onOpenPlanChooser()}
             className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white text-xs font-bold rounded-lg shadow-md transition-all cursor-pointer"
@@ -139,7 +139,7 @@ export default function DashboardPage({ setActivePage, onOpenPlanChooser }) {
       </div>
 
       {/* 6 Clean Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         {/* Metric 1: Revenue */}
         <div className="glass-panel p-4 rounded-xl cursor-pointer hover:border-blue-500/50 transition-all" onClick={() => setActivePage('invoices')}>
           <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
@@ -259,7 +259,7 @@ export default function DashboardPage({ setActivePage, onOpenPlanChooser }) {
             </div>
           </div>
 
-          <div className="h-72">
+          <div className="h-60 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={financialData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>

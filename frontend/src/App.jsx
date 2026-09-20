@@ -5,19 +5,20 @@ import { DataProvider } from './context/DataContext';
 // Layout Components
 import Sidebar from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 import GlobalSearchModal from './components/common/GlobalSearchModal';
 import InactivityModal from './components/common/InactivityModal';
 import PlanChooserModal from './components/common/PlanChooserModal';
 
-// Primary Eager Pages
+// Primary Eager Pages (Public entry points)
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
-import DashboardPage from './pages/DashboardPage';
-import ClientMgmtPage from './pages/ClientMgmtPage';
-import ProjectMgmtPage from './pages/ProjectMgmtPage';
-import TaskMgmtPage from './pages/TaskMgmtPage';
 
-// Code-Split Lazy Loaded Secondary & Heavy Pages
+// Code-Split Lazy Loaded Workspace Pages
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const ClientMgmtPage = lazy(() => import('./pages/ClientMgmtPage'));
+const ProjectMgmtPage = lazy(() => import('./pages/ProjectMgmtPage'));
+const TaskMgmtPage = lazy(() => import('./pages/TaskMgmtPage'));
 const AdminAuthPage = lazy(() => import('./pages/AdminAuthPage'));
 const OrganizationMgmtPage = lazy(() => import('./pages/OrganizationMgmtPage'));
 const TimeTrackingPage = lazy(() => import('./pages/TimeTrackingPage'));
@@ -37,6 +38,7 @@ function AppContent() {
   const { currentUser, getRoleDefaultPath, logout, apiFetch, silentRefresh, updateCurrentUser } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [pathname, setPathname] = useState(window.location.pathname);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [showPlanChooserModal, setShowPlanChooserModal] = useState(false);
@@ -304,11 +306,13 @@ function AppContent() {
   // Authenticated Workspace View
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-navy-950 text-slate-900 dark:text-slate-100 transition-colors">
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation (Desktop Fixed & Mobile Slide-Out Drawer) */}
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
         onOpenPlanChooser={() => setShowPlanChooserModal(true)}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Workspace Layout */}
@@ -318,10 +322,11 @@ function AppContent() {
           onOpenSearch={() => setIsSearchOpen(true)}
           activePage={activePage}
           setActivePage={setActivePage}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
         />
 
         {/* Scrollable Viewport */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8 touch-scroll">
           <Suspense fallback={
             <div className="flex h-64 items-center justify-center text-slate-400">
               <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -385,6 +390,13 @@ function AppContent() {
           currentPlan={currentUser?.subscriptionDetails?.plan || currentOrg?.plan || 'Pro Plan'}
         />
       )}
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activePage={activePage}
+        setActivePage={setActivePage}
+        onOpenDrawer={() => setIsMobileSidebarOpen(true)}
+      />
     </div>
   );
 }

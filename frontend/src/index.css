@@ -72,3 +72,22 @@
 .dark .zoho-gradient-hero {
   background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
 }
+
+/* Mobile Touch & Safe Area Enhancements */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+.safe-area-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+

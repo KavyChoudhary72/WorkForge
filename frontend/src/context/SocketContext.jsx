@@ -12,6 +12,12 @@ export const SocketProvider = ({ children }) => {
   const [realtimeNotification, setRealtimeNotification] = useState(null);
 
   useEffect(() => {
+    if (!currentUser) {
+      setIsConnected(false);
+      setSocket(null);
+      return;
+    }
+
     const SOCKET_URL = getSocketUrl();
     const newSocket = io(SOCKET_URL, {
       withCredentials: true,

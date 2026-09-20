@@ -20,7 +20,8 @@ import {
   Crop,
   X,
   Settings,
-  UserCircle
+  UserCircle,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -28,7 +29,7 @@ import { UserAvatar, OrgLogo } from '../common/UserAvatar';
 import ActiveSessionsModal from '../common/ActiveSessionsModal';
 import ImageCropperModal from '../common/ImageCropperModal';
 
-export default function TopBar({ onOpenSearch, activePage, setActivePage }) {
+export default function TopBar({ onOpenSearch, activePage, setActivePage, onToggleMobileSidebar }) {
   const { currentUser, currentOrg, darkMode, toggleDarkMode, logout, logoutAllDevices, updateUserProfileImage, updateCompanyLogo } = useAuth();
   const { activeTimer, pauseTimer, resumeTimer, stopTimerAndSave, notifications, markNotificationRead } = useData();
 
@@ -71,18 +72,27 @@ export default function TopBar({ onOpenSearch, activePage, setActivePage }) {
 
   return (
     <>
-      <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between sticky top-0 z-30 transition-colors">
-        {/* Left: Global Search Trigger */}
-        <div className="flex items-center space-x-4 flex-1 max-w-md">
+      <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 transition-colors">
+        {/* Left: Hamburger & Global Search Trigger */}
+        <div className="flex items-center space-x-2 sm:space-x-4 flex-1 max-w-md">
+          <button
+            onClick={onToggleMobileSidebar}
+            className="lg:hidden p-2 -ml-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Open Navigation Menu"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
           <button
             onClick={onOpenSearch}
-            className="w-full flex items-center justify-between px-3.5 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium transition-colors border border-slate-200 dark:border-transparent hover:border-slate-300 dark:hover:border-slate-700"
+            className="w-full flex items-center justify-between px-3 py-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium transition-colors border border-slate-200 dark:border-transparent hover:border-slate-300 dark:hover:border-slate-700"
           >
-            <div className="flex items-center space-x-2.5">
-              <Search className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-              <span>Search workspace...</span>
+            <div className="flex items-center space-x-2">
+              <Search className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+              <span className="truncate">Search workspace...</span>
             </div>
-            <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs font-mono bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded border border-slate-300 dark:border-slate-600 shadow-2xs font-semibold">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[11px] font-mono bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded border border-slate-300 dark:border-slate-600 shadow-2xs font-semibold">
               ⌘K
             </kbd>
           </button>
@@ -159,7 +169,7 @@ export default function TopBar({ onOpenSearch, activePage, setActivePage }) {
 
             {/* Notifications Dropdown Panel */}
             {showNotifDropdown && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-24px)] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50">
                 <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">Notifications</span>
@@ -247,7 +257,7 @@ export default function TopBar({ onOpenSearch, activePage, setActivePage }) {
 
             {/* User Dropdown Menu */}
             {showPersonaMenu && (
-              <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50">
+              <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-24px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50">
                 <div className="px-4 py-2.5 border-b border-slate-200 dark:border-slate-800">
                   <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Authenticated Workspace User</div>
                   <div className="text-sm font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">{currentUser?.name || 'Workspace Member'}</div>

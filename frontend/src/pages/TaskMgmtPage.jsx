@@ -25,6 +25,7 @@ export default function TaskMgmtPage() {
   const { currentUser, apiFetch } = useAuth();
   const [search, setSearch] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
+  const [mobileActiveCol, setMobileActiveCol] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [newCommentText, setNewCommentText] = useState('');
@@ -232,6 +233,36 @@ export default function TaskMgmtPage() {
         </div>
       </div>
 
+      {/* Mobile Column Switcher Tabs */}
+      <div className="md:hidden flex items-center space-x-1 p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl overflow-x-auto touch-scroll">
+        <button
+          onClick={() => setMobileActiveCol('All')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+            mobileActiveCol === 'All'
+              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+              : 'text-slate-600 dark:text-slate-400'
+          }`}
+        >
+          All ({filteredTasks.length})
+        </button>
+        {columns.map(col => {
+          const count = filteredTasks.filter(t => t.status === col.id || (col.id === 'Todo' && t.status === 'To Do') || (col.id === 'Review' && t.status === 'In Review') || (col.id === 'Done' && t.status === 'Completed')).length;
+          return (
+            <button
+              key={col.id}
+              onClick={() => setMobileActiveCol(col.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                mobileActiveCol === col.id
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              {col.title} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {/* Kanban Board 4 Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {columns.map(col => {
@@ -244,7 +275,9 @@ export default function TaskMgmtPage() {
               onDragOver={(e) => handleDragOver(e, col.id)}
               onDragLeave={() => setDragOverColId(null)}
               onDrop={(e) => handleDrop(e, col.id)}
-              className={`rounded-2xl p-4 border transition-all duration-200 flex flex-col min-h-[600px] ${
+              className={`rounded-2xl p-4 border transition-all duration-200 flex-col min-h-[420px] sm:min-h-[600px] ${
+                mobileActiveCol !== 'All' && mobileActiveCol !== col.id ? 'hidden md:flex' : 'flex'
+              } ${
                 isOver
                   ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 border-dashed ring-2 ring-blue-500/20'
                   : 'bg-slate-100/70 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80'

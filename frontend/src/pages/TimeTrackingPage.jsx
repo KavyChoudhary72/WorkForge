@@ -196,8 +196,8 @@ export default function TimeTrackingPage() {
             Recent Timesheet Log Entries
           </h3>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto touch-scroll">
+            <table className="w-full min-w-[500px] text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-semibold text-[10px]">
                   <th className="pb-3">Date & User</th>

@@ -17,14 +17,15 @@ import {
   ChevronDown,
   Settings,
   UserCircle,
-  Crown
+  Crown,
+  X
 } from 'lucide-react';
 import WorkForgeLogo from '../common/WorkForgeLogo';
 import { OrgLogo } from '../common/UserAvatar';
 import { useAuth } from '../../context/AuthContext';
 import ImageCropperModal from '../common/ImageCropperModal';
 
-export default function Sidebar({ activePage, setActivePage, onOpenPlanChooser }) {
+export default function Sidebar({ activePage, setActivePage, onOpenPlanChooser, isMobileOpen, onCloseMobile }) {
   const { currentOrg, switchOrganization, organizationsList, currentUser, updateCompanyLogo } = useAuth();
   const [showOrgDropdown, setShowOrgDropdown] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -59,12 +60,43 @@ export default function Sidebar({ activePage, setActivePage, onOpenPlanChooser }
     updateCompanyLogo(croppedDataUrl);
   };
 
+  const handleSelectPage = (pageId) => {
+    setActivePage(pageId);
+    if (onCloseMobile) onCloseMobile();
+  };
+
   return (
     <>
-      <aside className="w-64 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex flex-col h-screen sticky top-0 z-40 border-r border-slate-200 dark:border-slate-800 transition-colors">
-        {/* Brand Header with Clickable WorkForge Logo */}
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 transition-opacity"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          fixed lg:sticky top-0 inset-y-0 left-0 z-50 lg:z-40
+          w-72 lg:w-64 max-w-[85vw] lg:max-w-none
+          bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200
+          flex flex-col h-screen
+          border-r border-slate-200 dark:border-slate-800
+          transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0 shadow-none'}
+        `}
+      >
+        {/* Brand Header with Clickable WorkForge Logo & Mobile Close */}
         <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
-          <WorkForgeLogo size="small" onClick={handleHomeNavigate} />
+          <WorkForgeLogo size="small" onClick={() => { handleHomeNavigate(); if (onCloseMobile) onCloseMobile(); }} />
+          <button
+            onClick={onCloseMobile}
+            className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Close Menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Multi-Tenant Workspace Selector */}
@@ -145,7 +177,7 @@ export default function Sidebar({ activePage, setActivePage, onOpenPlanChooser }
             return (
               <button
                 key={item.id}
-                onClick={() => setActivePage(item.id)}
+                onClick={() => handleSelectPage(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   isActive
                     ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'

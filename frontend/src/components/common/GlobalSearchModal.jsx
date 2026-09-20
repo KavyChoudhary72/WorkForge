@@ -41,26 +41,26 @@ export default function GlobalSearchModal({ isOpen, onClose, onNavigate }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 bg-slate-900/60 backdrop-blur-sm px-4">
-      <div className="w-full max-auto max-w-2xl bg-white dark:bg-navy-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 sm:pt-16 bg-slate-900/60 backdrop-blur-sm px-3 sm:px-4">
+      <div className="w-full max-auto max-w-2xl bg-white dark:bg-navy-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all max-h-[85vh] flex flex-col">
         {/* Search Header */}
         <div className="relative flex items-center px-4 py-3.5 border-b border-slate-200 dark:border-slate-800">
-          <Search className="w-5 h-5 text-slate-400 mr-3" />
+          <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
           <input
             type="text"
             className="w-full bg-transparent text-slate-900 dark:text-slate-100 text-sm focus:outline-none placeholder-slate-400"
-            placeholder="Search projects, clients, tasks, invoices, files, team members... (ESC to close)"
+            placeholder="Search projects, clients, tasks, invoices... (ESC to close)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Results Container */}
-        <div className="max-h-[60vh] overflow-y-auto p-4 space-y-4">
+        <div className="max-h-[60vh] overflow-y-auto p-3 sm:p-4 space-y-4 touch-scroll">
           {!query.trim() ? (
             <div className="py-8 text-center text-slate-400 text-sm">
               Type keywords to search across the entire multi-tenant workspace platform.

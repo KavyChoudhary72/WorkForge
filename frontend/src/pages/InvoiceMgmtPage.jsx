@@ -346,8 +346,8 @@ export default function InvoiceMgmtPage() {
       </div>
 
       {/* Invoices Table */}
-      <div className="glass-panel p-6 rounded-xl overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
+      <div className="glass-panel p-4 sm:p-6 rounded-xl overflow-x-auto touch-scroll">
+        <table className="w-full min-w-[650px] text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-300 dark:border-slate-800 text-slate-800 dark:text-slate-200 uppercase tracking-wider font-extrabold text-[11px]">
               <th className="pb-3">Invoice ID</th>

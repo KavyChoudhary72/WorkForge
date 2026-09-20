@@ -40,7 +40,9 @@ import {
   Mail,
   Phone,
   HelpCircle,
-  BookOpen
+  BookOpen,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function LandingPage({ onOpenAuth }) {
@@ -48,6 +50,7 @@ export default function LandingPage({ onOpenAuth }) {
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
   const [activePreviewTab, setActivePreviewTab] = useState('dashboard');
   const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // 10 Core Features (Simple Everyday Language)
   const features = [
@@ -267,12 +270,12 @@ export default function LandingPage({ onOpenAuth }) {
           </nav>
 
           {/* Right Action Controls */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             
             {/* Theme Toggle Button */}
             <button
               onClick={toggleDarkMode}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700"
+              className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700"
               title="Toggle Light/Dark Theme"
               aria-label="Toggle Theme"
             >
@@ -280,7 +283,7 @@ export default function LandingPage({ onOpenAuth }) {
             </button>
 
             {currentUser ? (
-              <div className="flex items-center space-x-3">
+              <div className="hidden sm:flex items-center space-x-3">
                 <button
                   onClick={() => onOpenAuth('workspace')}
                   className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[15px] transition-all shadow-md shadow-emerald-600/20 flex items-center space-x-1.5"
@@ -296,7 +299,7 @@ export default function LandingPage({ onOpenAuth }) {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="hidden sm:flex items-center space-x-3">
                 <button
                   onClick={() => onOpenAuth('login')}
                   className="px-4 py-2.5 text-[15px] font-semibold text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-white transition-colors rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
@@ -311,9 +314,68 @@ export default function LandingPage({ onOpenAuth }) {
                 </button>
               </div>
             )}
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700"
+              title="Toggle Navigation Menu"
+              aria-label="Toggle Navigation Menu"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
 
         </div>
+
+        {/* Mobile Navigation Dropdown Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/98 dark:bg-slate-950/98 backdrop-blur-md px-4 py-4 space-y-3 shadow-2xl transition-all">
+            <nav className="flex flex-col space-y-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Features</a>
+              <a href="#solutions" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Solutions</a>
+              <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">How It Works</a>
+              <a href="#ai-features" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">AI Features</a>
+              <a href="#security" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Security</a>
+              <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Pricing</a>
+            </nav>
+
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+              {currentUser ? (
+                <>
+                  <button
+                    onClick={() => { setIsMobileMenuOpen(false); onOpenAuth('workspace'); }}
+                    className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-md shadow-emerald-600/20"
+                  >
+                    <span>Go to Workspace</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => { setIsMobileMenuOpen(false); logout(); }}
+                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { setIsMobileMenuOpen(false); onOpenAuth('login'); }}
+                    className="w-full py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => { setIsMobileMenuOpen(false); onOpenAuth('signup'); }}
+                    className="w-full py-2.5 text-sm font-semibold text-white bg-red-600 rounded-xl shadow-md shadow-red-600/25"
+                  >
+                    Start Free Trial
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* 2. HERO SECTION */}

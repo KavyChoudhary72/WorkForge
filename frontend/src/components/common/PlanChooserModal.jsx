@@ -251,7 +251,7 @@ export default function PlanChooserModal({
       }}
     >
       {/* Compact Widget Container with Glassmorphism */}
-      <div className="relative w-full max-w-4xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-white/40 dark:border-slate-800/80 rounded-2xl shadow-2xl p-5 sm:p-6 transition-all my-auto">
+      <div className="relative w-full max-w-4xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-white/40 dark:border-slate-800/80 rounded-2xl shadow-2xl p-4 sm:p-6 transition-all my-auto max-h-[92vh] overflow-y-auto touch-scroll">
         
         {/* Top Controls: Back to Login (if provided) and Close Button */}
         <div className="flex items-center justify-between mb-3">

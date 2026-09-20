@@ -58,41 +58,31 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // Static uploads serving for file downloads and previews
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// CORS configuration with credentials support for HttpOnly cookies
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:3000'
-].filter(Boolean);
+// Comprehensive CORS and Preflight handling for Vercel and production clients
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, or same-origin)
-      if (!origin) return callback(null, true);
-
-      // Always permit local development, any Vercel deployment, or Railway preview domains
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
-        origin.includes('railway.app') ||
-        process.env.NODE_ENV !== 'production'
-      ) {
-        return callback(null, true);
-      }
-
-      if (process.env.CLIENT_URL && origin.startsWith(process.env.CLIENT_URL.replace(/\/$/, ''))) {
-        return callback(null, true);
-      }
-
-      return callback(new Error(`Blocked by CORS: ${origin}`));
-    },
+    origin: (origin, callback) => callback(null, origin || true),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 200
   })
 );
+app.options('*', cors());
 
 // Rate Limiting for Authentication Endpoints
 const authLimiter = rateLimit({
@@ -142,7 +132,7 @@ app.get(['/health', '/api/health'], (req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 if (process.env.NODE_ENV !== 'test') {
   httpServer.listen(PORT, '0.0.0.0', () => {
@@ -151,6 +141,17 @@ if (process.env.NODE_ENV !== 'test') {
     connectDB().catch(err => {
       console.error('[MongoDB Error] Initial connection failed:', err.message);
     });
+  });
+
+  // Auxiliary listeners for cloud reverse proxies and load balancers
+  const auxiliaryPorts = [8080, 5000, 3000].filter(p => p !== PORT);
+  auxiliaryPorts.forEach(auxPort => {
+    try {
+      const auxServer = http.createServer(app);
+      auxServer.listen(auxPort, '0.0.0.0').on('error', () => {
+        // Port already taken or restricted, ignore safely
+      });
+    } catch (e) {}
   });
 }
 

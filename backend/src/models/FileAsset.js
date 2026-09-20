@@ -22,6 +22,7 @@ const fileAssetSchema = new mongoose.Schema(
     formattedSize: { type: String, default: '0 KB' },
     type: { type: String, default: 'application/octet-stream' },
     url: { type: String, default: '' },
+    cloudinaryPublicId: { type: String, default: null },
     category: {
       type: String,
       default: 'Document'

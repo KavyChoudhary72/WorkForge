@@ -4,6 +4,11 @@ import multer from 'multer';
 import FileAsset from '../models/FileAsset.js';
 import { logActivity } from '../middleware/activityLogger.js';
 import { emitTenantEvent } from '../config/socket.js';
+import {
+  isCloudinaryConfigured,
+  uploadFileToCloudinary,
+  deleteFromCloudinary
+} from '../config/cloudinary.js';
 
 // Ensure uploads directory exists
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -48,6 +53,7 @@ export const uploadFile = async (req, res, next) => {
     }
 
     let fileUrl = '';
+    let cloudinaryPublicId = null;
     let sizeBytes = 0;
     let fileName = '';
     let mimeType = 'application/octet-stream';
@@ -56,8 +62,22 @@ export const uploadFile = async (req, res, next) => {
       fileName = req.file.originalname;
       sizeBytes = req.file.size;
       mimeType = req.file.mimetype;
-      // Host URL
-      fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+      // Check if Cloudinary is configured
+      if (isCloudinaryConfigured()) {
+        try {
+          const tenantFolder = `workforge/${req.user.organizationId || 'general'}`;
+          const cldRes = await uploadFileToCloudinary(req.file.path, tenantFolder);
+          fileUrl = cldRes.url;
+          cloudinaryPublicId = cldRes.publicId;
+        } catch (cldErr) {
+          console.warn('[Cloudinary] Cloud upload error, falling back to local storage:', cldErr.message);
+          fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        }
+      } else {
+        // Local disk hosting fallback
+        fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      }
     } else {
       fileName = req.body.name;
       sizeBytes = req.body.sizeBytes || 0;
@@ -85,6 +105,7 @@ export const uploadFile = async (req, res, next) => {
       formattedSize,
       type: mimeType,
       url: fileUrl,
+      cloudinaryPublicId,
       category,
       folder,
       permissions,
@@ -103,7 +124,7 @@ export const uploadFile = async (req, res, next) => {
       userId: req.user.id,
       userEmail: req.user.email,
       action: 'FileUpload',
-      details: `File '${fileName}' (${formattedSize}) uploaded to category '${category}'.`,
+      details: `File '${fileName}' (${formattedSize}) uploaded to category '${category}'. Storage: ${cloudinaryPublicId ? 'Cloudinary' : 'Local Disk'}`,
       req
     });
 
@@ -129,6 +150,15 @@ export const deleteFile = async (req, res, next) => {
       return res.status(404).json({ message: 'File not found or access denied.' });
     }
 
+    // Clean up from Cloudinary if stored in cloud
+    if (file.cloudinaryPublicId && isCloudinaryConfigured()) {
+      try {
+        await deleteFromCloudinary(file.cloudinaryPublicId, file.type?.startsWith('image') ? 'image' : 'raw');
+      } catch (cldDelErr) {
+        console.warn('[Cloudinary] Could not remove cloud asset:', cldDelErr.message);
+      }
+    }
+
     await logActivity({
       organizationId: req.user.organizationId,
       userId: req.user.id,
@@ -144,4 +174,12 @@ export const deleteFile = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const getStorageStatus = async (req, res) => {
+  res.json({
+    cloudinaryConfigured: isCloudinaryConfigured(),
+    provider: isCloudinaryConfigured() ? 'Cloudinary (Cloud CDN)' : 'Local Disk (/uploads)',
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || null
+  });
 };

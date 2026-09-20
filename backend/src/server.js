@@ -142,17 +142,6 @@ if (process.env.NODE_ENV !== 'test') {
       console.error('[MongoDB Error] Initial connection failed:', err.message);
     });
   });
-
-  // Auxiliary listeners for cloud reverse proxies and load balancers
-  const auxiliaryPorts = [8080, 5000, 3000].filter(p => p !== PORT);
-  auxiliaryPorts.forEach(auxPort => {
-    try {
-      const auxServer = http.createServer(app);
-      auxServer.listen(auxPort, '0.0.0.0').on('error', () => {
-        // Port already taken or restricted, ignore safely
-      });
-    } catch (e) {}
-  });
 }
 
 export default app;

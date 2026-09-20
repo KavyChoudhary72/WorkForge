@@ -1,14 +1,29 @@
 import axios from 'axios';
 
 export const getApiBaseUrl = () => {
+  // If running on production hosted domain (e.g. Vercel), use same-origin /api proxy
+  // This completely eliminates ERR_NAME_NOT_RESOLVED ISP DNS blocks and CORS issues
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1' &&
+    !window.location.hostname.startsWith('10.') &&
+    !window.location.hostname.startsWith('192.168.')
+  ) {
+    return '/api';
+  }
+
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+  if (envUrl && envUrl.startsWith('http') && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
     const clean = envUrl.replace(/\/+$/, '');
     return clean.endsWith('/api') ? clean : `${clean}/api`;
   }
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'https://workforge-production-e3ef.up.railway.app/api';
+
+  // Local network testing on phone (e.g., http://10.x.x.x:5173)
+  if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5000/api`;
   }
+
   const raw = envUrl || 'http://localhost:5000/api';
   const clean = raw.replace(/\/+$/, '');
   return clean.endsWith('/api') ? clean : `${clean}/api`;

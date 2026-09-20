@@ -19,11 +19,39 @@ const DataContext = createContext();
 export function DataProvider({ children }) {
   const { currentUser, apiFetch } = useAuth();
 
+  // Bulletproof LocalStorage setter with QuotaExceeded protection
+  const safeSetStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+      console.warn(`[Storage Quota Warning] Could not cache '${key}' to localStorage:`, err.message);
+      if (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014) {
+        try {
+          // Free up space by purging heavy/non-essential caches
+          localStorage.removeItem('nexus_files');
+          localStorage.removeItem('nexus_activity');
+          localStorage.removeItem('nexus_timelogs');
+          // Try once more for lightweight essential data
+          if (key !== 'nexus_files' && key !== 'nexus_activity') {
+            localStorage.setItem(key, JSON.stringify(value));
+          }
+        } catch {
+          // Silently ignore; data remains safely in React memory
+        }
+      }
+    }
+  };
+
   // Helper to purge legacy dummy data from local storage
   const getCleanStorage = (key, fallback) => {
     try {
       const saved = localStorage.getItem(key);
       if (!saved) return fallback;
+      // Auto-purge oversized entries (e.g. legacy files or base64 blobs > 300KB)
+      if (saved.length > 300000) {
+        localStorage.removeItem(key);
+        return fallback;
+      }
       const parsed = JSON.parse(saved);
       const hasLegacyDummy = JSON.stringify(parsed).includes('org-1') || JSON.stringify(parsed).includes('Acme Global') || JSON.stringify(parsed).includes('PRJ-APX');
       if (hasLegacyDummy) {
@@ -47,6 +75,18 @@ export function DataProvider({ children }) {
   const [notifications, setNotifications] = useState(() => getCleanStorage('nexus_notifications', MOCK_NOTIFICATIONS));
   const [activityLogs, setActivityLogs] = useState(() => getCleanStorage('nexus_activity', MOCK_ACTIVITY_LOGS));
   const [teamMembers, setTeamMembers] = useState(() => getCleanStorage('nexus_team', MOCK_USERS));
+
+  // Proactively purge oversized legacy cache entries on mount
+  useEffect(() => {
+    try {
+      ['nexus_files', 'nexus_activity', 'nexus_timelogs'].forEach(key => {
+        const item = localStorage.getItem(key);
+        if (item && (item.length > 250000 || item.includes('data:image'))) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch {}
+  }, []);
 
   // Fetch all real database records from Express API
   const fetchBackendData = async () => {
@@ -268,41 +308,53 @@ export function DataProvider({ children }) {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  // Save to localStorage (Local fallback cache)
+  // Save to localStorage (Local fallback cache with Quota Safety)
   useEffect(() => {
-    localStorage.setItem('nexus_organizations', JSON.stringify(organizations));
+    safeSetStorage('nexus_organizations', organizations);
   }, [organizations]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_clients', JSON.stringify(clients));
+    safeSetStorage('nexus_clients', clients);
   }, [clients]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_projects', JSON.stringify(projects));
+    safeSetStorage('nexus_projects', projects);
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_tasks', JSON.stringify(tasks));
+    safeSetStorage('nexus_tasks', tasks);
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_invoices', JSON.stringify(invoices));
+    safeSetStorage('nexus_invoices', invoices);
   }, [invoices]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_timelogs', JSON.stringify(timeLogs));
+    safeSetStorage('nexus_timelogs', timeLogs);
   }, [timeLogs]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_files', JSON.stringify(files));
+    // Only store lightweight file metadata in localStorage (never large base64 data)
+    const lightweightFiles = (files || []).map(f => ({
+      id: f.id || f._id,
+      name: f.name,
+      formattedSize: f.formattedSize,
+      sizeBytes: f.sizeBytes,
+      type: f.type,
+      category: f.category,
+      folder: f.folder,
+      url: f.url?.startsWith('data:') ? '' : f.url
+    }));
+    safeSetStorage('nexus_files', lightweightFiles);
   }, [files]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_notifications', JSON.stringify(notifications));
+    safeSetStorage('nexus_notifications', notifications);
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_activity', JSON.stringify(activityLogs));
+    // Only store the latest 30 audit logs to conserve storage quota
+    safeSetStorage('nexus_activity', (activityLogs || []).slice(0, 30));
   }, [activityLogs]);
 
   // CRUD Handlers

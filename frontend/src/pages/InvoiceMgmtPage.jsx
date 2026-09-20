@@ -62,7 +62,7 @@ export default function InvoiceMgmtPage() {
       }
 
       // 1. Create Razorpay order on backend with resilient direct fallback
-      let keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TTxygVOgedEqAn';
+      let keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TeHTdeeDYTH92D';
       let orderId = null;
       let amount = Math.round((inv.totalAmount || 1000) * 100);
       let currency = 'INR';

@@ -2,12 +2,18 @@
 process.env.NODE_ENV = 'test';
 
 import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const runScript = (scriptName) => {
   return new Promise((resolve, reject) => {
     console.log(`\n>>> STARTING SUITE: ${scriptName} <<<`);
-    const child = spawn(process.execPath, [scriptName], {
+    const scriptPath = path.join(__dirname, scriptName);
+    const child = spawn(process.execPath, [scriptPath], {
       stdio: 'inherit',
+      cwd: path.resolve(__dirname, '..'),
       env: { ...process.env, NODE_ENV: 'test' }
     });
 

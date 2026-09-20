@@ -1,9 +1,9 @@
 process.env.NODE_ENV = 'test';
-import connectDB from './src/config/db.js';
-import app from './src/server.js';
-import User from './src/models/User.js';
-import Organization from './src/models/Organization.js';
-import Session from './src/models/Session.js';
+import connectDB from '../src/config/db.js';
+import app from '../src/server.js';
+import User from '../src/models/User.js';
+import Organization from '../src/models/Organization.js';
+import Session from '../src/models/Session.js';
 
 let server;
 

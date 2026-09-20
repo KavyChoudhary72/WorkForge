@@ -8,7 +8,7 @@
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "seed": "node src/seed.js",
-    "test": "node run_all_tests.js"
+    "test": "node tests/run_all_tests.js"
   },
   "keywords": [
     "express",

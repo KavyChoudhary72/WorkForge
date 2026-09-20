@@ -16,7 +16,13 @@ export const SocketProvider = ({ children }) => {
     const newSocket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
-      autoConnect: true
+      autoConnect: true,
+      reconnectionAttempts: 5,
+      timeout: 8000
+    });
+
+    newSocket.on('connect_error', () => {
+      setIsConnected(false);
     });
 
     newSocket.on('connect', () => {

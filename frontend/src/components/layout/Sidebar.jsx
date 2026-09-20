@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   BarChart3,
   SlidersHorizontal,
+  Sparkles,
   ChevronDown,
   Settings,
   UserCircle,

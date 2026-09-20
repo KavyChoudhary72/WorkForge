@@ -1,9 +1,29 @@
 import axios from 'axios';
 
-const rawApiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const API_BASE_URL = rawApiUrl.replace(/\/+$/, '').endsWith('/api')
-  ? rawApiUrl.replace(/\/+$/, '')
-  : `${rawApiUrl.replace(/\/+$/, '')}/api`;
+export const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    const clean = envUrl.replace(/\/+$/, '');
+    return clean.endsWith('/api') ? clean : `${clean}/api`;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://workforge-production-e3ef.up.railway.app/api';
+  }
+  const raw = envUrl || 'http://localhost:5000/api';
+  const clean = raw.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
+export const getSocketUrl = () => {
+  const envSocket = import.meta.env.VITE_SOCKET_URL;
+  if (envSocket && !envSocket.includes('localhost') && !envSocket.includes('127.0.0.1')) {
+    return envSocket.replace(/\/+$/, '');
+  }
+  const apiUrl = getApiBaseUrl();
+  return apiUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,

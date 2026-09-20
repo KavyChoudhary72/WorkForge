@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MOCK_USERS, MOCK_ORGANIZATIONS } from '../data/mockData';
+import { getApiBaseUrl } from '../services/api';
 
 const AuthContext = createContext();
 
-const rawApiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const API_BASE_URL = rawApiUrl.replace(/\/+$/, '').endsWith('/api')
-  ? rawApiUrl.replace(/\/+$/, '')
-  : `${rawApiUrl.replace(/\/+$/, '')}/api`;
+const API_BASE_URL = getApiBaseUrl();
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {

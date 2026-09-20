@@ -2,9 +2,11 @@
   "name": "workforge-saas-platform",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "main": "server.js",
   "description": "WorkForge Multi-Tenant SaaS Platform",
   "scripts": {
-    "start": "cd backend && npm start",
+    "start": "node server.js",
     "build": "cd backend && npm install",
     "postinstall": "cd backend && npm install"
   },

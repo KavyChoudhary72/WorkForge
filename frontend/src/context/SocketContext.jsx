@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getSocketUrl } from '../services/api';
 
 const SocketContext = createContext(null);
 
@@ -11,9 +12,7 @@ export const SocketProvider = ({ children }) => {
   const [realtimeNotification, setRealtimeNotification] = useState(null);
 
   useEffect(() => {
-    const rawSocketUrl = import.meta.env.VITE_SOCKET_URL ||
-      (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '').replace(/\/api$/, '') : 'http://localhost:5000');
-    const SOCKET_URL = rawSocketUrl.replace(/\/+$/, '');
+    const SOCKET_URL = getSocketUrl();
     const newSocket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],

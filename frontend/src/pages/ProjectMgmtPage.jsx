@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { UserAvatar } from '../components/common/UserAvatar';
+import { getApiBaseUrl } from '../services/api';
 
 export default function ProjectMgmtPage() {
   const { projects, clients, addProject, updateProject, teamMembers } = useData();
@@ -33,7 +34,7 @@ export default function ProjectMgmtPage() {
     if (!proj) return;
     setLoadingAi(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE = getApiBaseUrl();
       const res = await fetch(`${API_BASE}/ai/health-audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

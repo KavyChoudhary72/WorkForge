@@ -1,5 +1,9 @@
 import dns from "node:dns";
-dns.setServers(["1.1.1.1", "1.0.0.1"]);
+try {
+  if (process.env.NODE_ENV !== 'production' && !process.env.RAILWAY_ENVIRONMENT) {
+    dns.setServers(["1.1.1.1", "1.0.0.1"]);
+  }
+} catch (e) {}
 import http from 'http';
 import path from 'path';
 import express from 'express';
@@ -8,7 +12,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
-import connectDB from './config/db.js';
+import connectDB, { getDbStatus } from './config/db.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSocket } from './config/socket.js';
 
@@ -130,6 +134,7 @@ app.get(['/health', '/api/health'], (req, res) => {
     status: 'online',
     timestamp: new Date().toISOString(),
     service: 'WorkForge Enterprise Backend API',
+    database: getDbStatus(),
     realtime: 'Socket.IO Active'
   });
 });
@@ -140,9 +145,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() => {
-    httpServer.listen(PORT, '0.0.0.0', () => {
-      console.log(`[WorkForge Server] Production REST & WebSocket API active on port ${PORT} (0.0.0.0)`);
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`[WorkForge Server] Production REST & WebSocket API active on port ${PORT} (0.0.0.0)`);
+    // Connect to MongoDB asynchronously so server binds to $PORT immediately on Railway
+    connectDB().catch(err => {
+      console.error('[MongoDB Error] Initial connection failed:', err.message);
     });
   });
 }

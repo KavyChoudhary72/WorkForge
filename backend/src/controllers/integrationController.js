@@ -1,5 +1,20 @@
 import Organization from '../models/Organization.js';
 
+/**
+ * Helper to mask sensitive keys before sending config to client
+ */
+const sanitizeIntegrationConfig = (config = {}) => {
+  const sanitized = { ...config };
+  if (sanitized.razorpaySecret) {
+    sanitized.razorpaySecret = '••••••••';
+  }
+  return sanitized;
+};
+
+/**
+ * @desc Get all connected third-party integrations for tenant organization
+ * @route GET /api/integrations
+ */
 export const getIntegrations = async (req, res, next) => {
   try {
     const org = await Organization.findById(req.user.organizationId);
@@ -7,14 +22,26 @@ export const getIntegrations = async (req, res, next) => {
       return res.status(404).json({ message: 'Organization not found.' });
     }
     
-    // If integrations map doesn't exist, return empty object
     const integrations = org.integrations || new Map();
-    res.json(Object.fromEntries(integrations));
+    const result = {};
+
+    for (const [key, value] of integrations.entries()) {
+      result[key] = {
+        status: value?.status || 'Disconnected',
+        config: sanitizeIntegrationConfig(value?.config || {})
+      };
+    }
+
+    res.json(result);
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * @desc Toggle connection status of an integration
+ * @route POST /api/integrations/:id/toggle
+ */
 export const toggleIntegration = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -36,12 +63,20 @@ export const toggleIntegration = async (req, res, next) => {
     });
 
     await org.save();
-    res.json({ id, status: nextStatus, config: current.config });
+    res.json({
+      id,
+      status: nextStatus,
+      config: sanitizeIntegrationConfig(current.config || {})
+    });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * @desc Save integration credentials/configuration safely
+ * @route PUT /api/integrations/:id/config
+ */
 export const saveIntegrationConfig = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -57,13 +92,23 @@ export const saveIntegrationConfig = async (req, res, next) => {
 
     const current = org.integrations.get(id) || { status: 'Disconnected', config: {} };
     
+    // Only update secret if user provided a new real secret (not masked bullets)
+    const updatedConfig = { ...current.config, ...config };
+    if (config?.razorpaySecret && config.razorpaySecret.includes('•')) {
+      updatedConfig.razorpaySecret = current.config?.razorpaySecret || '';
+    }
+
     org.integrations.set(id, {
       status: current.status,
-      config: { ...current.config, ...config }
+      config: updatedConfig
     });
 
     await org.save();
-    res.json({ id, status: current.status, config: org.integrations.get(id).config });
+    res.json({
+      id,
+      status: current.status,
+      config: sanitizeIntegrationConfig(updatedConfig)
+    });
   } catch (error) {
     next(error);
   }

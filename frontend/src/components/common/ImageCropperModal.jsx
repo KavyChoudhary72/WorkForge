@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, ZoomIn, ZoomOut, RotateCcw, RotateCw, Check, X, Crop, Image as ImageIcon } from 'lucide-react';
+import { Upload, ZoomIn, RotateCcw, RotateCw, Check, X, Crop, Image as ImageIcon } from 'lucide-react';
 
 export default function ImageCropperModal({
   isOpen,

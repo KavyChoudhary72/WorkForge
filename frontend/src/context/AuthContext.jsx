@@ -1,17 +1,32 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { MOCK_USERS, MOCK_ORGANIZATIONS } from '../data/mockData';
 import { getApiBaseUrl } from '../services/api';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = getApiBaseUrl();
-
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
+      const savedToken = localStorage.getItem('nexus_token') || localStorage.getItem('nexus_auth_token');
+      const savedRefreshToken = localStorage.getItem('nexus_refresh_token');
+
+      // If no tokens exist at all or demo token, clear session
+      if ((!savedToken && !savedRefreshToken) || savedToken === 'demo_token') {
+        localStorage.removeItem('nexus_token');
+        localStorage.removeItem('nexus_auth_token');
+        localStorage.removeItem('nexus_refresh_token');
+        localStorage.removeItem('nexus_user');
+        return null;
+      }
       const saved = localStorage.getItem('nexus_user');
       if (saved) {
         const u = JSON.parse(saved);
+        if (u.isOfflineMode) {
+          localStorage.removeItem('nexus_token');
+          localStorage.removeItem('nexus_auth_token');
+          localStorage.removeItem('nexus_refresh_token');
+          localStorage.removeItem('nexus_user');
+          return null;
+        }
         if (u.avatar && u.avatar.includes('unsplash')) u.avatar = '';
         if (u.profileImage && u.profileImage.includes('unsplash')) u.profileImage = '';
         if (u.organizationLogo && u.organizationLogo.includes('unsplash')) u.organizationLogo = '';
@@ -24,12 +39,12 @@ export function AuthProvider({ children }) {
   });
 
   const defaultOrg = {
-    id: 'org-1',
-    name: 'WorkForge Enterprise Workspace',
-    slug: 'workforge-enterprise',
-    plan: 'Pro Plan',
+    id: '',
+    name: 'Workspace',
+    slug: 'workspace',
+    plan: 'None',
     status: 'Active',
-    departments: ['Engineering', 'Design', 'Product', 'Marketing', 'Executive'],
+    departments: [],
     logo: ''
   };
 
@@ -47,9 +62,81 @@ export function AuthProvider({ children }) {
     }
   });
 
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem('nexus_token') || null);
+  const [authToken, setAuthToken] = useState(() => {
+    const token = localStorage.getItem('nexus_token') || localStorage.getItem('nexus_auth_token');
+    if (token === 'demo_token') {
+      localStorage.removeItem('nexus_token');
+      localStorage.removeItem('nexus_auth_token');
+      return null;
+    }
+    return token || null;
+  });
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [sessionVerifying, setSessionVerifying] = useState(true);
+
+  // Authenticate session against live backend on initial mount
+  useEffect(() => {
+    let isMounted = true;
+    const verifySessionWithBackend = async () => {
+      const token = authToken || localStorage.getItem('nexus_token') || localStorage.getItem('nexus_auth_token');
+      if (!token || token === 'demo_token') {
+        if (isMounted) setSessionVerifying(false);
+        return;
+      }
+
+      try {
+        const baseUrl = getApiBaseUrl();
+        const res = await fetch(`${baseUrl}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user && isMounted) {
+            const u = data.user;
+            setCurrentUser(u);
+            localStorage.setItem('nexus_user', JSON.stringify(u));
+          }
+        } else if (res.status === 401) {
+          // Token expired - attempt silent refresh
+          const refreshToken = localStorage.getItem('nexus_refresh_token');
+          if (refreshToken) {
+            const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken })
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              if (refreshData.accessToken && isMounted) {
+                setAuthToken(refreshData.accessToken);
+                localStorage.setItem('nexus_token', refreshData.accessToken);
+                if (refreshData.user) {
+                  setCurrentUser(refreshData.user);
+                  localStorage.setItem('nexus_user', JSON.stringify(refreshData.user));
+                }
+              }
+            } else if (isMounted) {
+              logout();
+            }
+          } else if (isMounted) {
+            logout();
+          }
+        }
+      } catch (err) {
+        console.warn('[AuthContext] Backend session verification warning:', err.message);
+      } finally {
+        if (isMounted) setSessionVerifying(false);
+      }
+    };
+
+    verifySessionWithBackend();
+    return () => { isMounted = false; };
+  }, []);
 
   // Sync currentOrg dynamically when currentUser changes or logs in
   useEffect(() => {
@@ -108,19 +195,20 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Helper for API fetch calls with credentials and 3.5s fast-fail timeout
+  // Helper for API fetch calls with credentials and timeout
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const defaultHeaders = { 'Content-Type': 'application/json' };
-    const token = authToken || localStorage.getItem('nexus_token');
-    if (token) {
+    const token = authToken || localStorage.getItem('nexus_token') || localStorage.getItem('nexus_auth_token');
+    if (token && token !== 'demo_token') {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
     }
 
     const controller = new AbortController();
-    const timeoutDuration = options.timeout || 3500;
+    const timeoutDuration = options.timeout || 10000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
     try {
+      const baseUrl = getApiBaseUrl();
       const config = {
         ...options,
         headers: { ...defaultHeaders, ...options.headers },
@@ -128,8 +216,46 @@ export function AuthProvider({ children }) {
         signal: controller.signal
       };
 
-      const res = await fetch(`${API_BASE_URL}${endpoint}`, config);
+      const res = await fetch(`${baseUrl}${endpoint}`, config);
       clearTimeout(timeoutId);
+
+      // Auto-refresh token once if access token expired on protected route
+      if (res.status === 401 && !endpoint.startsWith('/auth/') && !options._retry) {
+        const savedRefreshToken = localStorage.getItem('nexus_refresh_token');
+        if (savedRefreshToken) {
+          try {
+            const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ refreshToken: savedRefreshToken })
+            });
+            const refreshData = await refreshRes.json().catch(() => ({}));
+            if (refreshRes.ok && refreshData.accessToken) {
+              setAuthToken(refreshData.accessToken);
+              localStorage.setItem('nexus_token', refreshData.accessToken);
+              localStorage.setItem('nexus_auth_token', refreshData.accessToken);
+              if (refreshData.refreshToken) {
+                localStorage.setItem('nexus_refresh_token', refreshData.refreshToken);
+              }
+              const retryConfig = {
+                ...config,
+                _retry: true,
+                headers: {
+                  ...config.headers,
+                  'Authorization': `Bearer ${refreshData.accessToken}`
+                }
+              };
+              const retryRes = await fetch(`${baseUrl}${endpoint}`, retryConfig);
+              const retryData = await retryRes.json().catch(() => ({}));
+              return { res: retryRes, data: retryData };
+            }
+          } catch (rErr) {
+            // Ignore refresh error
+          }
+        }
+      }
+
       const data = await res.json().catch(() => ({}));
       return { res, data };
     } catch (err) {
@@ -141,26 +267,53 @@ export function AuthProvider({ children }) {
   // Silent Token Refresh
   const silentRefresh = useCallback(async () => {
     try {
+      const savedToken = localStorage.getItem('nexus_token') || localStorage.getItem('nexus_auth_token');
+      const savedRefreshToken = localStorage.getItem('nexus_refresh_token');
+
+      // If no saved tokens or user exist, nothing to refresh
       const hasSavedUser = localStorage.getItem('nexus_user');
-      if (!hasSavedUser && !document.cookie.includes('refreshToken')) {
+      if (!hasSavedUser && !savedRefreshToken && !savedToken) {
         return false;
       }
 
-      const { res, data } = await apiFetch('/auth/refresh', { method: 'POST' });
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ refreshToken: savedRefreshToken || '' })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok && data.accessToken) {
         setAuthToken(data.accessToken);
         localStorage.setItem('nexus_token', data.accessToken);
+        localStorage.setItem('nexus_auth_token', data.accessToken);
+        if (data.refreshToken) {
+          localStorage.setItem('nexus_refresh_token', data.refreshToken);
+        }
         if (data.user) {
           setCurrentUser(data.user);
           localStorage.setItem('nexus_user', JSON.stringify(data.user));
         }
         return true;
       }
+
+      // If refresh failed (401 or 403), session is dead; clear stale state
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('nexus_token');
+        localStorage.removeItem('nexus_auth_token');
+        localStorage.removeItem('nexus_refresh_token');
+        localStorage.removeItem('nexus_user');
+        setAuthToken(null);
+        setCurrentUser(null);
+      }
       return false;
     } catch (e) {
       return false;
     }
-  }, [apiFetch]);
+  }, []);
 
   // Initial Silent Auth Check on Application Mount
   useEffect(() => {
@@ -188,12 +341,13 @@ export function AuthProvider({ children }) {
 
       if (!res.ok) {
         setLoading(false);
-        setAuthError(data.message || 'Authentication failed');
+        const errMsg = data?.message || 'Authentication failed. Please check your credentials.';
+        setAuthError(errMsg);
         return {
           success: false,
-          error: data.message || 'Authentication failed',
-          emailUnverified: data.emailUnverified,
-          verificationToken: data.verificationToken
+          error: errMsg,
+          emailUnverified: data?.emailUnverified,
+          verificationToken: data?.verificationToken
         };
       }
 
@@ -201,30 +355,19 @@ export function AuthProvider({ children }) {
       if (data.accessToken) {
         setAuthToken(data.accessToken);
         localStorage.setItem('nexus_token', data.accessToken);
+        localStorage.setItem('nexus_auth_token', data.accessToken);
+      }
+      if (data.refreshToken) {
+        localStorage.setItem('nexus_refresh_token', data.refreshToken);
       }
       localStorage.setItem('nexus_user', JSON.stringify(data.user));
       setLoading(false);
       return { success: true, user: data.user, defaultPath: getRoleDefaultPath(data.user.role) };
     } catch (err) {
-      console.warn('[WorkForge Auth] Live API unreachable, activating offline session:', err.message);
-      const fallbackUser = {
-        id: `usr_${Date.now()}`,
-        _id: `usr_${Date.now()}`,
-        name: email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') || 'WorkForge Leader',
-        email: email,
-        role: 'COMPANY_ADMIN',
-        organizationId: 'org_workspace_1',
-        organizationName: 'WorkForge Enterprise Workspace',
-        subscriptionDetails: { plan: 'Pro Plan', status: 'Active' },
-        isEmailVerified: true,
-        isOfflineMode: true
-      };
-      setCurrentUser(fallbackUser);
-      setAuthToken('demo_token');
-      localStorage.setItem('nexus_token', 'demo_token');
-      localStorage.setItem('nexus_user', JSON.stringify(fallbackUser));
       setLoading(false);
-      return { success: true, user: fallbackUser, defaultPath: getRoleDefaultPath(fallbackUser.role), isOffline: true };
+      const errMsg = `Cannot reach backend API at ${getApiBaseUrl()}. Please verify your network and server status.`;
+      setAuthError(errMsg);
+      return { success: false, error: errMsg };
     }
   };
 
@@ -240,36 +383,28 @@ export function AuthProvider({ children }) {
 
       if (!res.ok) {
         setLoading(false);
-        setAuthError(data.message || 'Super Admin authentication denied');
-        return { success: false, error: data.message || 'Super Admin authentication denied' };
+        const errMsg = data?.message || 'Super Admin authentication denied.';
+        setAuthError(errMsg);
+        return { success: false, error: errMsg };
       }
 
       setCurrentUser(data.user);
       if (data.accessToken) {
         setAuthToken(data.accessToken);
         localStorage.setItem('nexus_token', data.accessToken);
+        localStorage.setItem('nexus_auth_token', data.accessToken);
+      }
+      if (data.refreshToken) {
+        localStorage.setItem('nexus_refresh_token', data.refreshToken);
       }
       localStorage.setItem('nexus_user', JSON.stringify(data.user));
       setLoading(false);
       return { success: true, user: data.user, defaultPath: '/organization' };
     } catch (err) {
-      console.warn('[WorkForge Auth] Super Admin API unreachable, activating offline session:', err.message);
-      const fallbackAdmin = {
-        id: 'usr_super_1',
-        _id: 'usr_super_1',
-        name: 'WorkForge Super Admin',
-        email: email,
-        role: 'SUPER_ADMIN',
-        organizationId: 'org_governance',
-        organizationName: 'WorkForge Governance',
-        isOfflineMode: true
-      };
-      setCurrentUser(fallbackAdmin);
-      setAuthToken('demo_token');
-      localStorage.setItem('nexus_token', 'demo_token');
-      localStorage.setItem('nexus_user', JSON.stringify(fallbackAdmin));
       setLoading(false);
-      return { success: true, user: fallbackAdmin, defaultPath: '/organization', isOffline: true };
+      const errMsg = `Cannot reach Super Admin API at ${getApiBaseUrl()}. Please verify the backend is running.`;
+      setAuthError(errMsg);
+      return { success: false, error: errMsg };
     }
   };
 
@@ -285,48 +420,33 @@ export function AuthProvider({ children }) {
 
       if (!res.ok) {
         setLoading(false);
-        setAuthError(data.message || 'Registration failed');
-        return { success: false, error: data.message || 'Registration failed' };
+        const errMsg = data?.message || 'Registration failed. Please try again.';
+        setAuthError(errMsg);
+        return { success: false, error: errMsg };
       }
 
       setCurrentUser(data.user);
       if (data.accessToken) {
         setAuthToken(data.accessToken);
         localStorage.setItem('nexus_token', data.accessToken);
+        localStorage.setItem('nexus_auth_token', data.accessToken);
+      }
+      if (data.refreshToken) {
+        localStorage.setItem('nexus_refresh_token', data.refreshToken);
       }
       localStorage.setItem('nexus_user', JSON.stringify(data.user));
       setLoading(false);
       return {
         success: true,
-        message: data.message,
+        message: data.message || 'Workspace created successfully!',
         verificationToken: data.verificationToken,
         user: data.user
       };
     } catch (err) {
-      console.warn('[WorkForge Auth] Registration API unreachable, activating offline workspace:', err.message);
-      const fallbackUser = {
-        id: `usr_${Date.now()}`,
-        _id: `usr_${Date.now()}`,
-        name: name || email.split('@')[0],
-        email: email,
-        role: 'COMPANY_ADMIN',
-        organizationId: `org_${Date.now()}`,
-        organizationName: companyName || 'WorkForge Workspace',
-        subscriptionDetails: { plan: 'Starter', status: 'Active' },
-        isEmailVerified: true,
-        isOfflineMode: true
-      };
-      setCurrentUser(fallbackUser);
-      setAuthToken('demo_token');
-      localStorage.setItem('nexus_token', 'demo_token');
-      localStorage.setItem('nexus_user', JSON.stringify(fallbackUser));
       setLoading(false);
-      return {
-        success: true,
-        message: 'Account created successfully!',
-        user: fallbackUser,
-        isOffline: true
-      };
+      const errMsg = `Cannot reach registration API at ${getApiBaseUrl()}. Please verify the backend is running.`;
+      setAuthError(errMsg);
+      return { success: false, error: errMsg };
     }
   };
 
@@ -440,6 +560,8 @@ export function AuthProvider({ children }) {
     }
     localStorage.removeItem('nexus_user');
     localStorage.removeItem('nexus_token');
+    localStorage.removeItem('nexus_auth_token');
+    localStorage.removeItem('nexus_refresh_token');
     setAuthToken(null);
     setCurrentUser(null);
   };
@@ -453,6 +575,8 @@ export function AuthProvider({ children }) {
     }
     localStorage.removeItem('nexus_user');
     localStorage.removeItem('nexus_token');
+    localStorage.removeItem('nexus_auth_token');
+    localStorage.removeItem('nexus_refresh_token');
     setAuthToken(null);
     setCurrentUser(null);
   };
@@ -481,19 +605,13 @@ export function AuthProvider({ children }) {
 
   // Switch Organization Workspace
   const switchOrganization = (orgId) => {
-    const targetOrg = MOCK_ORGANIZATIONS.find(o => o.id === orgId) || currentOrg || defaultOrg;
-    if (targetOrg) {
-      setCurrentOrg(targetOrg);
-      localStorage.setItem('nexus_org', JSON.stringify(targetOrg));
+    if (orgId) {
+      setCurrentOrg(prev => ({ ...(prev || defaultOrg), id: orgId }));
     }
   };
 
   const switchUserPersona = (userId) => {
-    const targetUser = MOCK_USERS.find(u => u.id === userId) || currentUser;
-    if (targetUser) {
-      setCurrentUser(targetUser);
-      localStorage.setItem('nexus_user', JSON.stringify(targetUser));
-    }
+    // Production user identity remains preserved
   };
 
   const updateCurrentUser = (user) => {
@@ -510,14 +628,32 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateCurrentOrg = (org) => {
+    setCurrentOrg(prev => {
+      const merged = { ...(prev || defaultOrg), ...org };
+      localStorage.setItem('nexus_org', JSON.stringify(merged));
+      return merged;
+    });
+    if (org?.name && currentUser) {
+      setCurrentUser(prevUser => {
+        if (!prevUser) return prevUser;
+        const updated = { ...prevUser, organizationName: org.name };
+        localStorage.setItem('nexus_user', JSON.stringify(updated));
+        return updated;
+      });
+    }
+  };
+
   const value = {
     currentUser,
     updateCurrentUser,
     currentOrg,
+    updateCurrentOrg,
     authToken,
     apiFetch,
     darkMode,
     loading,
+    sessionVerifying,
     authError,
     toggleDarkMode,
     switchOrganization,
@@ -537,8 +673,8 @@ export function AuthProvider({ children }) {
     revokeSession,
     getRoleDefaultPath,
     silentRefresh,
-    organizationsList: MOCK_ORGANIZATIONS,
-    usersList: MOCK_USERS
+    organizationsList: [],
+    usersList: []
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

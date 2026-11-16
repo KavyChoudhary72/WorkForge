@@ -18,6 +18,9 @@ const organizationSchema = new mongoose.Schema(
       default: 'Active'
     },
     departments: [{ type: String }],
+    gstNumber: { type: String, default: '' },
+    currency: { type: String, default: 'INR (₹)' },
+    timezone: { type: String, default: 'Asia/Kolkata (IST +5:30)' },
     storageUsedGB: { type: Number, default: 0 },
     storageUsageGB: { type: Number, default: 0 },
     storageLimitGB: { type: Number, default: 100 },

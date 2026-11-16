@@ -7,22 +7,18 @@ import {
   Mail,
   Phone,
   FileText,
-  Briefcase,
   MapPin,
   X,
   ExternalLink,
-  ChevronRight,
   Edit2,
   Archive,
-  RotateCcw,
-  CheckCircle,
-  FileSpreadsheet
+  RotateCcw
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { UserAvatar } from '../components/common/UserAvatar';
 
 export default function ClientMgmtPage() {
-  const { clients, addClient, updateClient, toggleArchiveClient, projects } = useData();
+  const { clients, addClient, updateClient, toggleArchiveClient, projects, dataLoading } = useData();
   const [search, setSearch] = useState('');
   const [industryFilter, setIndustryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('Active'); // 'Active' | 'Archived' | 'All'
@@ -57,22 +53,24 @@ export default function ClientMgmtPage() {
     return matchesSearch && matchesIndustry && matchesStatus;
   });
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    addClient(formData);
-    setShowAddModal(false);
-    setFormData({
-      name: '',
-      company: '',
-      email: '',
-      phone: '',
-      gstNumber: '',
-      industry: 'Financial Technology',
-      address: '',
-      contactPerson: '',
-      notes: '',
-      avatar: ''
-    });
+    const res = await addClient(formData);
+    if (res && res.success !== false) {
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        company: '',
+        email: '',
+        phone: '',
+        gstNumber: '',
+        industry: 'Financial Technology',
+        address: '',
+        contactPerson: '',
+        notes: '',
+        avatar: ''
+      });
+    }
   };
 
   const handleOpenEdit = (c) => {
@@ -91,13 +89,17 @@ export default function ClientMgmtPage() {
     });
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editingClient) return;
     if (updateClient) {
-      updateClient(editingClient.id, formData);
+      const res = await updateClient(editingClient.id, formData);
+      if (res && res.success !== false) {
+        setEditingClient(null);
+      }
+    } else {
+      setEditingClient(null);
     }
-    setEditingClient(null);
   };
 
   return (
@@ -314,7 +316,7 @@ export default function ClientMgmtPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium"
-                    placeholder="e.g. Elena Rostova"
+                    placeholder="Client name"
                   />
                 </div>
                 <div>
@@ -325,7 +327,7 @@ export default function ClientMgmtPage() {
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium"
-                    placeholder="Acme Innovations Inc"
+                    placeholder="Company entity name"
                   />
                 </div>
               </div>
@@ -338,7 +340,7 @@ export default function ClientMgmtPage() {
                     value={formData.contactPerson}
                     onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
                     className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium"
-                    placeholder="VP Operations / Lead"
+                    placeholder="Contact person"
                   />
                 </div>
                 <div>
@@ -425,9 +427,10 @@ export default function ClientMgmtPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
+                  disabled={dataLoading}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl disabled:opacity-50 flex items-center space-x-2"
                 >
-                  {editingClient ? 'Save Changes' : 'Save Client Record'}
+                  <span>{dataLoading ? 'Saving to Database...' : (editingClient ? 'Save Changes' : 'Save Client Record')}</span>
                 </button>
               </div>
             </form>

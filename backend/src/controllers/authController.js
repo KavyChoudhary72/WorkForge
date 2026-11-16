@@ -3,23 +3,14 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Organization from '../models/Organization.js';
 import Session from '../models/Session.js';
+import ActivityLog from '../models/ActivityLog.js';
+import Payment from '../models/Payment.js';
+import { isCloudinaryConfigured, uploadBase64ToCloudinary } from '../config/cloudinary.js';
 
 // Helper: Password Strength Validation
 export const validatePasswordStrength = (password) => {
   if (!password || password.length < 8) {
     return 'Password must be at least 8 characters long.';
-  }
-  if (!/[A-Z]/.test(password)) {
-    return 'Password must contain at least one uppercase letter.';
-  }
-  if (!/[a-z]/.test(password)) {
-    return 'Password must contain at least one lowercase letter.';
-  }
-  if (!/[0-9]/.test(password)) {
-    return 'Password must contain at least one number.';
-  }
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    return 'Password must contain at least one special character.';
   }
   return null;
 };
@@ -45,14 +36,26 @@ const generateAccessToken = (user) => {
   });
 };
 
-// Helper: Refresh Token Cookie Setting
+// Helper: Refresh Token Cookie Setting (cross-site secure in production, lax in local development)
 const setRefreshTokenCookie = (res, refreshToken, rememberMe = false) => {
   const maxAgeMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: maxAgeMs,
+    path: '/'
+  });
+};
+
+// Helper: Clear Refresh Token Cookie with matching cross-site flags
+const clearRefreshTokenCookie = (res) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/'
   });
 };
@@ -86,7 +89,6 @@ const parseUserAgent = (req) => {
 // Helper: Internal Audit Logging
 const logActivityInternal = async ({ organizationId, userId, userEmail, action, details, req }) => {
   try {
-    const ActivityLog = (await import('../models/ActivityLog.js')).default;
     const { ipAddress, userAgentString } = parseUserAgent(req);
     await ActivityLog.create({
       organizationId: organizationId || null,
@@ -121,12 +123,18 @@ export const registerCompany = async (req, res, next) => {
       return res.status(400).json({ message: 'A user with this email address already exists. Please sign in.' });
     }
 
-    // Create Organization
+    // Create Organization with active 14-Day Free Trial
+    const trialStartDate = new Date();
+    const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
     const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(1000 + Math.random() * 9000);
     const organization = await Organization.create({
       name: companyName,
       slug,
-      plan: 'None',
+      plan: 'Trial Plan',
+      subscriptionPlan: 'Trial Plan',
+      trialActivated: true,
+      trialStartDate,
+      trialEndDate,
       status: 'Active',
       departments: ['Engineering', 'Design', 'Marketing', 'Executive']
     });
@@ -142,7 +150,14 @@ export const registerCompany = async (req, res, next) => {
       designation: 'Company Founder',
       accountStatus: 'Active',
       isEmailVerified: true,
-      permissions: ['ALL_PERMISSIONS', 'MANAGE_USERS', 'MANAGE_PROJECTS', 'MANAGE_BILLING']
+      permissions: ['ALL_PERMISSIONS', 'MANAGE_USERS', 'MANAGE_PROJECTS', 'MANAGE_BILLING'],
+      subscriptionDetails: {
+        plan: 'Trial Plan',
+        seats: 10,
+        trialActivated: true,
+        trialStartDate,
+        trialEndDate
+      }
     });
 
     // Generate Tokens for immediate login
@@ -181,6 +196,7 @@ export const registerCompany = async (req, res, next) => {
     res.status(201).json({
       message: 'Company workspace registered successfully.',
       accessToken,
+      refreshToken,
       user: {
         id: user._id,
         userId: user._id,
@@ -195,7 +211,14 @@ export const registerCompany = async (req, res, next) => {
         designation: user.designation,
         permissions: user.permissions,
         accountStatus: user.accountStatus,
-        isEmailVerified: true
+        isEmailVerified: true,
+        subscriptionDetails: {
+          plan: 'Trial Plan',
+          seats: 10,
+          trialActivated: true,
+          trialStartDate,
+          trialEndDate
+        }
       }
     });
   } catch (error) {
@@ -345,6 +368,7 @@ export const loginUser = async (req, res, next) => {
 
     res.json({
       accessToken,
+      refreshToken,
       user: {
         id: user._id,
         userId: user._id,
@@ -361,11 +385,11 @@ export const loginUser = async (req, res, next) => {
         accountStatus: user.accountStatus,
         isEmailVerified: true,
         subscriptionDetails: {
-          plan: user.email === 'peter@oscorp.com' ? 'Pro Plan' : (user.organizationId?.plan || 'None'),
+          plan: user.subscriptionDetails?.plan || user.organizationId?.plan || 'None',
           seats: user.subscriptionDetails?.seats || 10,
-          trialActivated: user.email === 'peter@oscorp.com' ? false : (user.organizationId?.trialActivated || false),
-          trialStartDate: user.organizationId?.trialStartDate,
-          trialEndDate: user.organizationId?.trialEndDate
+          trialActivated: user.subscriptionDetails?.trialActivated !== undefined ? user.subscriptionDetails.trialActivated : (user.organizationId?.trialActivated || false),
+          trialStartDate: user.subscriptionDetails?.trialStartDate || user.organizationId?.trialStartDate,
+          trialEndDate: user.subscriptionDetails?.trialEndDate || user.organizationId?.trialEndDate
         }
       }
     });
@@ -465,6 +489,7 @@ export const adminLogin = async (req, res, next) => {
 
     res.json({
       accessToken,
+      refreshToken,
       user: {
         id: user._id,
         userId: user._id,
@@ -500,14 +525,14 @@ export const refreshToken = async (req, res, next) => {
         console.warn(`[Token Theft Safeguard] Revoking all sessions for user ${session.userId} due to reused refresh token.`);
         await Session.updateMany({ userId: session.userId }, { isValid: false });
       }
-      res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+      clearRefreshTokenCookie(res);
       return res.status(401).json({ message: 'Invalid or revoked refresh token. Re-authentication required.' });
     }
 
     const user = await User.findById(session.userId).populate('organizationId');
     if (!user || user.accountStatus === 'Suspended') {
       await Session.findByIdAndDelete(session._id);
-      res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+      clearRefreshTokenCookie(res);
       return res.status(401).json({ message: 'User account not active.' });
     }
 
@@ -523,6 +548,7 @@ export const refreshToken = async (req, res, next) => {
 
     res.json({
       accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
       user: {
         id: user._id,
         userId: user._id,
@@ -538,11 +564,11 @@ export const refreshToken = async (req, res, next) => {
         permissions: user.permissions,
         accountStatus: user.accountStatus,
         subscriptionDetails: {
-          plan: user.email === 'peter@oscorp.com' ? 'Pro Plan' : (user.organizationId?.plan || 'None'),
+          plan: user.subscriptionDetails?.plan || user.organizationId?.plan || 'None',
           seats: user.subscriptionDetails?.seats || 10,
-          trialActivated: user.email === 'peter@oscorp.com' ? false : (user.organizationId?.trialActivated || false),
-          trialStartDate: user.organizationId?.trialStartDate,
-          trialEndDate: user.organizationId?.trialEndDate
+          trialActivated: user.subscriptionDetails?.trialActivated !== undefined ? user.subscriptionDetails.trialActivated : (user.organizationId?.trialActivated || false),
+          trialStartDate: user.subscriptionDetails?.trialStartDate || user.organizationId?.trialStartDate,
+          trialEndDate: user.subscriptionDetails?.trialEndDate || user.organizationId?.trialEndDate
         }
       }
     });
@@ -572,7 +598,7 @@ export const logout = async (req, res, next) => {
       });
     }
 
-    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+    clearRefreshTokenCookie(res);
     res.json({ message: 'Logged out successfully.' });
   } catch (error) {
     next(error);
@@ -595,7 +621,7 @@ export const logoutAllDevices = async (req, res, next) => {
       req
     });
 
-    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+    clearRefreshTokenCookie(res);
     res.json({ message: 'Successfully logged out from all active devices.' });
   } catch (error) {
     next(error);
@@ -771,7 +797,7 @@ export const changePassword = async (req, res, next) => {
 // 11. Employee Creation
 export const createEmployee = async (req, res, next) => {
   try {
-    const { name, email, password, department, designation, role } = req.body;
+    const { name, email, password, department, designation, role, skills } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' });
@@ -790,6 +816,10 @@ export const createEmployee = async (req, res, next) => {
       return res.status(400).json({ message: 'User with this email already exists.' });
     }
 
+    const parsedSkills = Array.isArray(skills)
+      ? skills
+      : (typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(Boolean) : []);
+
     const newUser = await User.create({
       organizationId: orgId,
       name,
@@ -798,6 +828,7 @@ export const createEmployee = async (req, res, next) => {
       role: targetRole,
       department: department || 'General',
       designation: designation || 'Team Member',
+      skills: parsedSkills,
       accountStatus: 'Active',
       isEmailVerified: true,
       permissions: targetRole === 'PROJECT_MANAGER' ? ['MANAGE_PROJECTS', 'MANAGE_TASKS'] : ['MANAGE_TASKS']
@@ -887,7 +918,6 @@ export const activateTrial = async (req, res, next) => {
     org.subscriptionPlan = 'Trial Plan';
     await org.save();
 
-    const User = (await import('../models/User.js')).default;
     const user = await User.findById(req.user.id).populate('organizationId');
 
     res.json({
@@ -956,7 +986,6 @@ export const choosePlan = async (req, res, next) => {
     await org.save();
 
     // Record payment in DB
-    const Payment = (await import('../models/Payment.js')).default;
     await Payment.create({
       organizationId: org._id,
       amount,
@@ -967,7 +996,6 @@ export const choosePlan = async (req, res, next) => {
     });
 
     // Record Activity Log
-    const ActivityLog = (await import('../models/ActivityLog.js')).default;
     await ActivityLog.create({
       organizationId: org._id,
       userId: req.user.id,
@@ -976,7 +1004,6 @@ export const choosePlan = async (req, res, next) => {
       details: `${req.user.name} purchased ${normalizedPlan} (${cycle}) for ${org.name}.`
     });
 
-    const User = (await import('../models/User.js')).default;
     const user = await User.findById(req.user.id).populate('organizationId');
 
     res.json({
@@ -1022,7 +1049,6 @@ export const updateOrganizationLogo = async (req, res, next) => {
 
     // If logo is base64 and Cloudinary is configured, upload to Cloudinary!
     if (logo && logo.startsWith('data:image')) {
-      const { isCloudinaryConfigured, uploadBase64ToCloudinary } = await import('../config/cloudinary.js');
       if (isCloudinaryConfigured()) {
         try {
           const cldRes = await uploadBase64ToCloudinary(logo, `workforge/organizations/${orgId}/logo`);
@@ -1048,6 +1074,60 @@ export const updateOrganizationLogo = async (req, res, next) => {
       message: 'Organization logo updated successfully.',
       logo: finalLogoUrl,
       organization: org
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update Organization Profile Settings (Name, Industry, Email, Phone, Currency, GSTIN)
+export const updateOrganizationSettings = async (req, res, next) => {
+  try {
+    const orgId = req.user?.role === 'SUPER_ADMIN' 
+      ? (req.body.organizationId || req.user?.organizationId) 
+      : req.user?.organizationId;
+
+    if (!orgId) {
+      return res.status(400).json({ message: 'Organization ID is required.' });
+    }
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization workspace not found.' });
+    }
+
+    if (req.body.name) org.name = req.body.name.trim();
+    if (req.body.industry !== undefined) org.industry = req.body.industry.trim();
+    if (req.body.email !== undefined) org.email = req.body.email.trim();
+    if (req.body.phone !== undefined) org.phone = req.body.phone.trim();
+    if (req.body.currency) org.currency = req.body.currency;
+    if (req.body.timezone) org.timezone = req.body.timezone;
+    if (req.body.gstNumber !== undefined) org.gstNumber = req.body.gstNumber.trim();
+
+    await org.save();
+
+    // If organization name changed, update User's cached organization name if needed
+    if (req.body.name && req.user._id) {
+      await User.updateMany({ organizationId: org._id }, { organizationName: req.body.name.trim() }).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      message: 'Organization profile updated successfully.',
+      organization: {
+        id: org._id,
+        _id: org._id,
+        name: org.name,
+        slug: org.slug,
+        industry: org.industry,
+        email: org.email,
+        phone: org.phone,
+        plan: org.plan,
+        currency: org.currency,
+        timezone: org.timezone,
+        gstNumber: org.gstNumber,
+        logo: org.logo
+      }
     });
   } catch (error) {
     next(error);

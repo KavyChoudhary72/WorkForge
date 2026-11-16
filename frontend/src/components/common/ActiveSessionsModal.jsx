@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Laptop, Smartphone, Tablet, Globe, Shield, Trash2, LogOut, X, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Laptop, Smartphone, Tablet, Shield, Trash2, LogOut, X, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ActiveSessionsModal({ isOpen, onClose }) {
@@ -9,7 +9,7 @@ export default function ActiveSessionsModal({ isOpen, onClose }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     setLoading(true);
     setError('');
     const res = await getActiveSessions();
@@ -19,13 +19,13 @@ export default function ActiveSessionsModal({ isOpen, onClose }) {
       setError(res.error || 'Failed to load active sessions.');
     }
     setLoading(false);
-  };
+  }, [getActiveSessions]);
 
   useEffect(() => {
     if (isOpen) {
       fetchSessions();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchSessions]);
 
   const handleRevoke = async (sessionId) => {
     const res = await revokeSession(sessionId);

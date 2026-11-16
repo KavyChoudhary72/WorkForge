@@ -1,17 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import {
-  MOCK_ORGANIZATIONS,
-  MOCK_CLIENTS,
-  MOCK_PROJECTS,
-  MOCK_TASKS,
-  MOCK_INVOICES,
-  MOCK_TIME_LOGS,
-  MOCK_FILES,
-  MOCK_NOTIFICATIONS,
-  MOCK_ACTIVITY_LOGS,
-  MOCK_USERS
-} from '../data/mockData';
 import { formatINR } from '../utils/formatters';
 
 const DataContext = createContext();
@@ -43,7 +31,7 @@ export function DataProvider({ children }) {
   };
 
   // Helper to purge legacy dummy data from local storage
-  const getCleanStorage = (key, fallback) => {
+  const getCleanStorage = (key, fallback = []) => {
     try {
       const saved = localStorage.getItem(key);
       if (!saved) return fallback;
@@ -53,38 +41,41 @@ export function DataProvider({ children }) {
         return fallback;
       }
       const parsed = JSON.parse(saved);
-      const hasLegacyDummy = JSON.stringify(parsed).includes('org-1') || JSON.stringify(parsed).includes('Acme Global') || JSON.stringify(parsed).includes('PRJ-APX');
+      const str = JSON.stringify(parsed);
+      const hasLegacyDummy = str.includes('org-1') || str.includes('Acme') || str.includes('PRJ-APX') || str.includes('Sarah Connor') || str.includes('Alex Morgan') || str.includes('Omnichannel');
       if (hasLegacyDummy) {
         localStorage.removeItem(key);
         return fallback;
       }
-      return parsed;
+      return Array.isArray(parsed) ? parsed : fallback;
     } catch (e) {
       return fallback;
     }
   };
 
-  // Master Collections
-  const [organizations, setOrganizations] = useState(() => getCleanStorage('nexus_organizations', MOCK_ORGANIZATIONS));
-  const [clients, setClients] = useState(() => getCleanStorage('nexus_clients', MOCK_CLIENTS));
-  const [projects, setProjects] = useState(() => getCleanStorage('nexus_projects', MOCK_PROJECTS));
-  const [tasks, setTasks] = useState(() => getCleanStorage('nexus_tasks', MOCK_TASKS));
-  const [invoices, setInvoices] = useState(() => getCleanStorage('nexus_invoices', MOCK_INVOICES));
-  const [timeLogs, setTimeLogs] = useState(() => getCleanStorage('nexus_timelogs', MOCK_TIME_LOGS));
-  const [files, setFiles] = useState(() => getCleanStorage('nexus_files', MOCK_FILES));
-  const [notifications, setNotifications] = useState(() => getCleanStorage('nexus_notifications', MOCK_NOTIFICATIONS));
-  const [activityLogs, setActivityLogs] = useState(() => getCleanStorage('nexus_activity', MOCK_ACTIVITY_LOGS));
-  const [teamMembers, setTeamMembers] = useState(() => getCleanStorage('nexus_team', MOCK_USERS));
+  // Master Collections - Exclusively sourced from Live MongoDB Backend API
+  const [organizations, setOrganizations] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [timeLogs, setTimeLogs] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [lastSynced, setLastSynced] = useState(null);
+  const [isBackendOnline, setIsBackendOnline] = useState(true);
 
-  // Proactively purge oversized legacy cache entries on mount
+  // Proactively purge any remaining localStorage database cache
   useEffect(() => {
     try {
-      ['nexus_files', 'nexus_activity', 'nexus_timelogs'].forEach(key => {
-        const item = localStorage.getItem(key);
-        if (item && (item.length > 250000 || item.includes('data:image'))) {
-          localStorage.removeItem(key);
-        }
-      });
+      [
+        'nexus_organizations', 'nexus_clients', 'nexus_projects', 
+        'nexus_tasks', 'nexus_invoices', 'nexus_timelogs', 
+        'nexus_files', 'nexus_notifications', 'nexus_activity', 'nexus_team'
+      ].forEach(key => localStorage.removeItem(key));
     } catch {}
   }, []);
 
@@ -92,6 +83,7 @@ export function DataProvider({ children }) {
   const fetchBackendData = async () => {
     try {
       if (!apiFetch) return;
+      setDataLoading(true);
 
       const endpoints = [
         apiFetch('/clients'),
@@ -121,7 +113,7 @@ export function DataProvider({ children }) {
         setProjects(resProj.data.map(p => ({
           ...p,
           id: p._id || p.id,
-          clientName: p.clientId?.name || p.clientName || 'Key Account'
+          clientName: p.clientId?.name || p.clientName || 'Client'
         })));
       }
 
@@ -130,7 +122,7 @@ export function DataProvider({ children }) {
         setTasks(resTsk.data.map(t => ({
           ...t,
           id: t._id || t.id,
-          projectName: t.projectId?.name || t.projectName || 'Active Project',
+          projectName: t.projectId?.name || t.projectName || 'Project',
           assignedName: t.assignedTo?.name || 'Unassigned'
         })));
       }
@@ -140,8 +132,8 @@ export function DataProvider({ children }) {
         setInvoices(resInv.data.map(i => ({
           ...i,
           id: i._id || i.id,
-          clientName: i.clientId?.name || i.clientName || 'Key Account',
-          projectName: i.projectId?.name || i.projectName || 'General Work',
+          clientName: i.clientId?.name || i.clientName || 'Client',
+          projectName: i.projectId?.name || i.projectName || 'Project',
           lineItems: (i.items || i.lineItems || []).map(item => ({
             ...item,
             quantity: item.hours || item.quantity || 1
@@ -190,8 +182,12 @@ export function DataProvider({ children }) {
       if (resOrg.res?.ok && Array.isArray(resOrg.data)) {
         setOrganizations(resOrg.data.map(o => ({ ...o, id: o._id || o.id })));
       }
+
+      setLastSynced(new Date());
     } catch (err) {
       console.warn('[DataContext Warning] Preserving local cache fallback:', err.message);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -206,9 +202,9 @@ export function DataProvider({ children }) {
   const [activeTimer, setActiveTimer] = useState({
     isRunning: false,
     seconds: 0,
-    projectId: 'prj-1',
-    projectName: 'Q4 Omnichannel Retail Expansion Strategy',
-    taskTitle: 'Vendor Contract & SLA Audit',
+    projectId: '',
+    projectName: '',
+    taskTitle: '',
   });
 
   // Timer Tick Effect
@@ -230,7 +226,7 @@ export function DataProvider({ children }) {
     setActiveTimer({
       isRunning: true,
       seconds: 0,
-      projectId: projectId || 'prj-1',
+      projectId: projectId || '',
       projectName: targetProject ? targetProject.name : 'General Task',
       taskTitle: taskTitle || 'Active Working Session',
     });
@@ -284,6 +280,35 @@ export function DataProvider({ children }) {
     setActiveTimer({ isRunning: false, seconds: 0, projectId: '', projectName: '', taskTitle: '' });
   };
 
+  // Add Manual Time Log Entry
+  const addTimeLog = async (logData) => {
+    try {
+      if (apiFetch) {
+        const { res, data } = await apiFetch('/timelogs', {
+          method: 'POST',
+          body: JSON.stringify(logData)
+        });
+        if (res.ok && data) {
+          const saved = { ...data, id: data._id || data.id };
+          setTimeLogs(prev => [saved, ...prev]);
+          addActivityLog(currentUser?.name || 'User', currentUser?.role || 'Employee', 'LOG_TIME', `Logged ${logData.hours} hours on ${logData.projectName || 'Project'}`);
+          return saved;
+        }
+      }
+    } catch (e) {
+      console.warn('API time log failed, applying local fallback:', e);
+    }
+    const fallback = {
+      id: `log-${Date.now()}`,
+      orgId: currentUser?.organizationId || 'org-1',
+      userId: currentUser?.id || 'usr-1',
+      userName: currentUser?.name || 'User',
+      ...logData
+    };
+    setTimeLogs(prev => [fallback, ...prev]);
+    return fallback;
+  };
+
   // Activity Log Creator Helper
   const addActivityLog = async (userName, userRole, action, details) => {
     const newLog = {
@@ -314,57 +339,9 @@ export function DataProvider({ children }) {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  // Save to localStorage (Local fallback cache with Quota Safety)
-  useEffect(() => {
-    safeSetStorage('nexus_organizations', organizations);
-  }, [organizations]);
-
-  useEffect(() => {
-    safeSetStorage('nexus_clients', clients);
-  }, [clients]);
-
-  useEffect(() => {
-    safeSetStorage('nexus_projects', projects);
-  }, [projects]);
-
-  useEffect(() => {
-    safeSetStorage('nexus_tasks', tasks);
-  }, [tasks]);
-
-  useEffect(() => {
-    safeSetStorage('nexus_invoices', invoices);
-  }, [invoices]);
-
-  useEffect(() => {
-    safeSetStorage('nexus_timelogs', timeLogs);
-  }, [timeLogs]);
-
-  useEffect(() => {
-    // Only store lightweight file metadata in localStorage (never large base64 data)
-    const lightweightFiles = (files || []).map(f => ({
-      id: f.id || f._id,
-      name: f.name,
-      formattedSize: f.formattedSize,
-      sizeBytes: f.sizeBytes,
-      type: f.type,
-      category: f.category,
-      folder: f.folder,
-      url: f.url?.startsWith('data:') ? '' : f.url
-    }));
-    safeSetStorage('nexus_files', lightweightFiles);
-  }, [files]);
-
-  useEffect(() => {
-    safeSetStorage('nexus_notifications', notifications);
-  }, [notifications]);
-
-  useEffect(() => {
-    // Only store the latest 30 audit logs to conserve storage quota
-    safeSetStorage('nexus_activity', (activityLogs || []).slice(0, 30));
-  }, [activityLogs]);
-
   // CRUD Handlers
   const addClient = async (clientData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch('/clients', {
         method: 'POST',
@@ -375,14 +352,23 @@ export function DataProvider({ children }) {
         setClients(prev => [savedClient, ...prev]);
         addActivityLog(currentUser?.name || 'System User', currentUser?.role || 'Admin', 'CREATE_CLIENT', `Created new client: ${clientData.name}`);
         addNotification('Client Added', `New client "${clientData.name}" was onboarded successfully.`, 'success');
+        return { success: true, client: savedClient };
+      } else {
+        const errMsg = data?.message || 'Server error adding client';
+        addNotification('Failed to Add Client', errMsg, 'error');
+        return { success: false, error: errMsg };
       }
     } catch (e) {
-      const newClient = { ...clientData, id: `cli-${Date.now()}`, totalBilled: 0, activeProjectsCount: 0 };
-      setClients(prev => [newClient, ...prev]);
+      console.error('[addClient] Error:', e.message);
+      addNotification('Connection Error', 'Could not reach server', 'error');
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const updateClient = async (id, updatedData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch(`/clients/${id}`, {
         method: 'PUT',
@@ -390,13 +376,29 @@ export function DataProvider({ children }) {
       });
       if (res.ok) {
         setClients(prev => prev.map(c => c.id === id ? { ...c, ...data, id: data._id || data.id || id } : c));
+        return { success: true, client: data };
+      } else {
+        return { success: false, error: data?.message };
       }
     } catch (e) {
-      setClients(prev => prev.map(c => c.id === id ? { ...c, ...updatedData } : c));
+      console.error('[updateClient] Error:', e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
+  const toggleArchiveClient = async (id) => {
+    const client = clients.find(c => c.id === id);
+    if (!client) return;
+    const isCurrentlyArchived = client.status === 'Archived' || client.isArchived;
+    const newStatus = isCurrentlyArchived ? 'Active' : 'Archived';
+    await updateClient(id, { status: newStatus, isArchived: !isCurrentlyArchived });
+    addNotification('Client Status Updated', `${client.name} marked as ${newStatus}.`, 'info');
+  };
+
   const addProject = async (projectData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch('/projects', {
         method: 'POST',
@@ -412,22 +414,23 @@ export function DataProvider({ children }) {
         setProjects(prev => [savedProject, ...prev]);
         addActivityLog(currentUser?.name || 'System User', currentUser?.role || 'Project Manager', 'CREATE_PROJECT', `Created project: ${projectData.name}`);
         addNotification('Project Created', `Project "${projectData.name}" has been launched.`, 'info');
+        return { success: true, project: savedProject };
+      } else {
+        const errMsg = data?.message || 'Server error creating project';
+        addNotification('Failed to Create Project', errMsg, 'error');
+        return { success: false, error: errMsg };
       }
     } catch (e) {
-      const newProject = {
-        ...projectData,
-        id: `prj-${Date.now()}`,
-        spent: 0,
-        completionPercent: 0,
-        aiHealthScore: 85,
-        aiHealthFactors: ['New project initialized', 'Scope baseline established'],
-        attachmentsCount: 0,
-      };
-      setProjects(prev => [newProject, ...prev]);
+      console.error('[addProject] Error:', e.message);
+      addNotification('Connection Error', 'Could not reach server', 'error');
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const updateProject = async (id, updatedData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch(`/projects/${id}`, {
         method: 'PUT',
@@ -435,13 +438,20 @@ export function DataProvider({ children }) {
       });
       if (res.ok) {
         setProjects(prev => prev.map(p => p.id === id ? { ...p, ...data, id: data._id || data.id || id } : p));
+        return { success: true, project: data };
+      } else {
+        return { success: false, error: data?.message };
       }
     } catch (e) {
-      setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updatedData } : p));
+      console.error('[updateProject] Error:', e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const addTask = async (taskData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch('/tasks', {
         method: 'POST',
@@ -452,21 +462,23 @@ export function DataProvider({ children }) {
         setTasks(prev => [savedTask, ...prev]);
         addActivityLog(currentUser?.name || 'System User', currentUser?.role || 'Project Manager', 'CREATE_TASK', `Created task: ${taskData.title}`);
         addNotification('Task Assigned', `New task "${taskData.title}" was created.`, 'info');
+        return { success: true, task: savedTask };
+      } else {
+        const errMsg = data?.message || 'Server error creating task';
+        addNotification('Failed to Create Task', errMsg, 'error');
+        return { success: false, error: errMsg };
       }
     } catch (e) {
-      const newTask = {
-        ...taskData,
-        id: `tsk-${Date.now()}`,
-        loggedHours: 0,
-        commentsCount: 0,
-        checklist: taskData.checklist || [],
-        aiRiskLevel: taskData.aiRiskLevel || 'Low',
-      };
-      setTasks(prev => [newTask, ...prev]);
+      console.error('[addTask] Error:', e.message);
+      addNotification('Connection Error', 'Could not reach server', 'error');
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const updateTask = async (id, updatedData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch(`/tasks/${id}`, {
         method: 'PUT',
@@ -474,26 +486,38 @@ export function DataProvider({ children }) {
       });
       if (res.ok) {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, ...data, id: data._id || data.id || id } : t));
+        return { success: true, task: data };
+      } else {
+        return { success: false, error: data?.message };
       }
     } catch (e) {
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updatedData } : t));
+      console.error('[updateTask] Error:', e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const deleteTask = async (id) => {
+    setDataLoading(true);
     try {
       const { res } = await apiFetch(`/tasks/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) {
         setTasks(prev => prev.filter(t => t.id !== id));
+        addNotification('Task Deleted', 'Task was removed.', 'info');
+        return { success: true };
       }
     } catch (e) {
-      setTasks(prev => prev.filter(t => t.id !== id));
+      console.error('[deleteTask] Error:', e.message);
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const addInvoice = async (invoiceData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch('/invoices', {
         method: 'POST',
@@ -514,18 +538,23 @@ export function DataProvider({ children }) {
         setInvoices(prev => [savedInvoice, ...prev]);
         addActivityLog(currentUser?.name || 'System User', currentUser?.role || 'Company Admin', 'CREATE_INVOICE', `Created Invoice #${savedInvoice.id}`);
         addNotification('Invoice Created', `Invoice #${savedInvoice.id} generated successfully.`, 'success');
+        return { success: true, invoice: savedInvoice };
+      } else {
+        const errMsg = data?.message || 'Server error creating invoice';
+        addNotification('Failed to Create Invoice', errMsg, 'error');
+        return { success: false, error: errMsg };
       }
     } catch (e) {
-      const newInvoice = {
-        ...invoiceData,
-        id: `inv-2026-0${invoices.length + 1}`,
-        paidAt: invoiceData.status === 'Paid' ? new Date().toISOString().split('T')[0] : null,
-      };
-      setInvoices(prev => [newInvoice, ...prev]);
+      console.error('[addInvoice] Error:', e.message);
+      addNotification('Connection Error', 'Could not reach server', 'error');
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const updateInvoiceStatus = async (id, newStatus) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch(`/invoices/${id}/status`, {
         method: 'PUT',
@@ -543,23 +572,17 @@ export function DataProvider({ children }) {
           return inv;
         }));
         addActivityLog(currentUser?.name || 'System User', 'Finance', 'UPDATE_INVOICE', `Updated Invoice #${id} status to ${newStatus}`);
+        return { success: true };
       }
     } catch (e) {
-      setInvoices(prev => prev.map(inv => {
-        if (inv.id === id) {
-          const isPaid = newStatus === 'Paid';
-          return {
-            ...inv,
-            status: newStatus,
-            paidAt: isPaid ? new Date().toISOString().split('T')[0] : inv.paidAt
-          };
-        }
-        return inv;
-      }));
+      console.error('[updateInvoiceStatus] Error:', e.message);
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const addFile = async (fileData) => {
+    setDataLoading(true);
     try {
       const { res, data } = await apiFetch('/files', {
         method: 'POST',
@@ -569,21 +592,20 @@ export function DataProvider({ children }) {
         const savedFile = { ...data, id: data._id || data.id };
         setFiles(prev => [savedFile, ...prev]);
         addActivityLog(currentUser?.name || 'System User', currentUser?.role || 'Employee', 'FILE_UPLOAD', `Uploaded file: ${fileData.name}`);
+        return { success: true, file: savedFile };
       } else {
         throw new Error(data?.message || 'Server error uploading file');
       }
     } catch (e) {
-      const newFile = {
-        ...fileData,
-        id: `fl-${Date.now()}`,
-        uploadedAt: new Date().toISOString().split('T')[0],
-        version: 'v1.0',
-      };
-      setFiles(prev => [newFile, ...prev]);
+      console.error('[addFile] Error:', e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setDataLoading(false);
     }
   };
 
   const deleteFile = async (id) => {
+    setDataLoading(true);
     try {
       const { res } = await apiFetch(`/files/${id}`, {
         method: 'DELETE'
@@ -591,9 +613,12 @@ export function DataProvider({ children }) {
       if (res.ok) {
         setFiles(prev => prev.filter(f => f.id !== id));
         addNotification('File Removed', 'Document was deleted from vault.', 'info');
+        return { success: true };
       }
     } catch (e) {
-      setFiles(prev => prev.filter(f => f.id !== id));
+      console.error('[deleteFile] Error:', e.message);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -621,11 +646,18 @@ export function DataProvider({ children }) {
     notifications,
     activityLogs,
     teamMembers,
+    dataLoading,
+    lastSynced,
+    isBackendOnline,
+    refetchData: fetchBackendData,
+    fetchBackendData,
+    toggleArchiveClient,
     activeTimer,
     startTimer,
     pauseTimer,
     resumeTimer,
     stopTimerAndSave,
+    addTimeLog,
     addClient,
     updateClient,
     addProject,

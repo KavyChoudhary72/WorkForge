@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import {
   BarChart3,
-  Download,
   FileSpreadsheet,
   FileText,
-  Printer,
-  CheckCircle,
-  FileDown
+  FileDown,
+  CheckCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { useData } from '../context/DataContext';
 
 export default function ReportsPage() {
-  const { invoices, projects, timeLogs, clients, teamMembers } = useData();
+  const { invoices, projects, clients, teamMembers } = useData();
   const [reportType, setReportType] = useState('Revenue');
   const [exportedMsg, setExportedMsg] = useState('');
 
@@ -33,7 +31,7 @@ export default function ReportsPage() {
     } else if (reportType === 'Employee') {
       csvContent += 'Name,Email,Department,Role,Salary CTC,Title\n';
       teamMembers.forEach(m => {
-        csvContent += `"${m.name}","${m.email}","${m.department}","${m.role}","${m.salaryLPA || '12.5 LPA'}","${m.title || 'Team Member'}"\n`;
+        csvContent += `"${m.name}","${m.email}","${m.department}","${m.role}","${m.salaryLPA || '—'}","${m.designation || m.title || m.role || 'Member'}"\n`;
       });
     } else {
       csvContent += 'Client Name,Company,Email,Phone,Industry,GSTIN,Total Billed\n';
@@ -84,9 +82,9 @@ export default function ReportsPage() {
         'Employee Name': m.name,
         'Email Address': m.email,
         'Department': m.department,
-        'Designation': m.title || 'Engineer',
+        'Designation': m.designation || m.title || m.role || 'Member',
         'Role': m.role,
-        'Salary CTC': m.salaryLPA || '₹14 LPA'
+        'Salary CTC': m.salaryLPA || '—'
       }));
     } else {
       data = clients.map(c => ({
@@ -348,7 +346,7 @@ export default function ReportsPage() {
                     <td className="py-3 font-bold text-slate-900 dark:text-slate-100">{m.name}</td>
                     <td className="py-3 text-slate-600 dark:text-slate-400">{m.department}</td>
                     <td className="py-3 text-slate-500">{m.email}</td>
-                    <td className="py-3 font-mono font-bold text-emerald-600">{m.salaryLPA || '₹14.5 LPA'}</td>
+                    <td className="py-3 font-mono font-bold text-emerald-600">{m.salaryLPA || '—'}</td>
                     <td className="py-3 font-bold text-indigo-600">{m.role}</td>
                   </tr>
                 ))}

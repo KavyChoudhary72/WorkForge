@@ -3,12 +3,7 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Briefcase,
-  CheckSquare,
-  Users,
-  Plus,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 

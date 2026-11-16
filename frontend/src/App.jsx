@@ -35,7 +35,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 import { SocketProvider } from './context/SocketContext';
 
 function AppContent() {
-  const { currentUser, currentOrg, getRoleDefaultPath, logout, apiFetch, silentRefresh, updateCurrentUser } = useAuth();
+  const { currentUser, currentOrg, getRoleDefaultPath, logout, apiFetch, silentRefresh, updateCurrentUser, sessionVerifying } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -69,12 +69,25 @@ function AppContent() {
     return normPath === '/super-admin-portal' || normPath === '/admin/login' || normPath === '/secret-admin';
   };
 
+  // Helper to check if current pathname is a standard Auth route (/login, /signup, etc.)
+  const isAuthRoute = (path) => {
+    const normPath = (path || '').toLowerCase();
+    return normPath === '/login' || normPath === '/signup' || normPath === '/register' || normPath === '/auth';
+  };
+
   // View state: 'landing' | 'auth' | 'admin' | 'workspace'
   const [viewState, setViewState] = useState(() => {
-    if (isSecretAdminRoute(window.location.pathname)) return 'admin';
+    const path = window.location.pathname;
+    if (isSecretAdminRoute(path)) return 'admin';
+    if (isAuthRoute(path)) return 'auth';
     return 'landing'; // Always land on public Homepage when opening http://localhost:5173/
   });
-  const [authMode, setAuthMode] = useState('login');
+
+  const [authMode, setAuthMode] = useState(() => {
+    const path = (window.location.pathname || '').toLowerCase();
+    if (path.includes('signup') || path.includes('register')) return 'signup';
+    return 'login';
+  });
 
   useEffect(() => {
     const handlePopState = () => {
@@ -82,13 +95,16 @@ function AppContent() {
       setPathname(currentPath);
       if (isSecretAdminRoute(currentPath)) {
         setViewState('admin');
+      } else if (isAuthRoute(currentPath)) {
+        setViewState('auth');
+        setAuthMode(currentPath.toLowerCase().includes('signup') || currentPath.toLowerCase().includes('register') ? 'signup' : 'login');
       } else if (currentPath === '/') {
-        setViewState('landing');
+        setViewState(currentUser ? 'workspace' : 'landing');
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [currentUser]);
 
   // Update default active page when user logs in
   useEffect(() => {
@@ -142,6 +158,16 @@ function AppContent() {
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
   }, [currentUser, resetInactivityTimer]);
+
+  // Session verification screen on reload
+  if (sessionVerifying && (localStorage.getItem('nexus_token') || localStorage.getItem('nexus_auth_token'))) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-bold text-slate-300 tracking-wide uppercase">Connecting to WorkForge Server...</p>
+      </div>
+    );
+  }
 
   // 1. Secret Super Admin URL handling (/admin/login)
   if (viewState === 'admin' || isSecretAdminRoute(pathname)) {
@@ -209,9 +235,14 @@ function AppContent() {
           onOpenAuth={(mode = 'login') => {
             if (mode === 'workspace' && currentUser) {
               setViewState('workspace');
+              window.history.pushState({}, '', '/');
+              setPathname('/');
             } else {
               setAuthMode(mode);
               setViewState('auth');
+              const targetRoute = mode === 'signup' ? '/signup' : '/login';
+              window.history.pushState({}, '', targetRoute);
+              setPathname(targetRoute);
             }
           }}
         />
@@ -229,9 +260,8 @@ function AppContent() {
 
   // Authenticated Workspace View
   if (currentUser && currentUser.role !== 'SUPER_ADMIN') {
-    const isPeter = currentUser.email === 'peter@oscorp.com';
-    const plan = isPeter ? 'Pro Plan' : (currentUser.subscriptionDetails?.plan || 'None');
-    const trialActivated = isPeter ? false : (currentUser.subscriptionDetails?.trialActivated || false);
+    const plan = currentUser.subscriptionDetails?.plan || currentOrg?.plan || 'None';
+    const trialActivated = currentUser.subscriptionDetails?.trialActivated || false;
     const trialEndDate = currentUser.subscriptionDetails?.trialEndDate;
 
     // 1. If trial is NOT activated and plan is None: block and require trial activation

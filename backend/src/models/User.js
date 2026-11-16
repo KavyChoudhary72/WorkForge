@@ -54,6 +54,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    skills: [
+      {
+        type: String,
+        trim: true
+      }
+    ],
     permissions: [
       {
         type: String

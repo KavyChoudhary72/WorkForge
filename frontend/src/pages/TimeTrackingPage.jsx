@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Clock,
   Play,
   Pause,
   Square,
   Plus,
-  Calendar,
-  CheckCircle2,
-  IndianRupee,
   TrendingUp,
   X,
   FileText
@@ -17,34 +14,53 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function TimeTrackingPage() {
-  const { timeLogs, activeTimer, startTimer, pauseTimer, resumeTimer, stopTimerAndSave, projects } = useData();
+  const { 
+    timeLogs = [], 
+    activeTimer, 
+    startTimer, 
+    pauseTimer, 
+    resumeTimer, 
+    stopTimerAndSave, 
+    addTimeLog,
+    projects = [] 
+  } = useData();
   const { currentUser } = useAuth();
   const [showManualModal, setShowManualModal] = useState(false);
-  const [selectedProjectForTimer, setSelectedProjectForTimer] = useState(projects[0]?.id || 'prj-1');
-  const [timerLabel, setTimerLabel] = useState('Sprint Feature Development');
+  const [selectedProjectForTimer, setSelectedProjectForTimer] = useState(projects[0]?.id || '');
+  const [timerLabel, setTimerLabel] = useState('');
+
+  React.useEffect(() => {
+    if (projects.length > 0 && !selectedProjectForTimer) {
+      setSelectedProjectForTimer(projects[0].id);
+    }
+  }, [projects]);
 
   const [manualForm, setManualForm] = useState({
     projectId: projects[0]?.id || '',
     taskTitle: '',
-    hours: 2.5,
+    hours: 1,
     date: new Date().toISOString().split('T')[0],
     billable: true,
     description: '',
   });
 
   // Calculate stats
-  const totalHours = timeLogs.reduce((sum, l) => sum + l.hours, 0);
-  const billableHours = timeLogs.filter(l => l.billable).reduce((sum, l) => sum + l.hours, 0);
+  const totalHours = timeLogs.reduce((sum, l) => sum + (Number(l.hours) || 0), 0);
+  const billableHours = timeLogs.filter(l => l.billable).reduce((sum, l) => sum + (Number(l.hours) || 0), 0);
   const billablePercent = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
 
-  // Chart data for daily breakdown
-  const dailyData = [
-    { day: 'Mon', billable: 7.5, nonBillable: 1.0 },
-    { day: 'Tue', billable: 8.0, nonBillable: 0.5 },
-    { day: 'Wed', billable: 6.5, nonBillable: 1.5 },
-    { day: 'Thu', billable: 8.5, nonBillable: 0.0 },
-    { day: 'Fri', billable: 7.0, nonBillable: 1.0 },
-  ];
+  // Chart data for daily breakdown dynamically computed from real time logs
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const dailyData = days.map(d => {
+    const logsForDay = timeLogs.filter(l => {
+      if (!l.date) return false;
+      const dayName = new Date(l.date).toLocaleDateString('en-US', { weekday: 'short' });
+      return dayName === d;
+    });
+    const billable = logsForDay.filter(l => l.billable).reduce((sum, l) => sum + (Number(l.hours) || 0), 0);
+    const nonBillable = logsForDay.filter(l => !l.billable).reduce((sum, l) => sum + (Number(l.hours) || 0), 0);
+    return { day: d, billable, nonBillable };
+  });
 
   const formatTime = (totalSeconds) => {
     const hrs = Math.floor(totalSeconds / 3600);
@@ -244,22 +260,20 @@ export default function TimeTrackingPage() {
               </button>
             </div>
 
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const proj = projects.find(p => p.id === manualForm.projectId);
-              useData().timeLogs.unshift({
-                id: `log-${Date.now()}`,
-                orgId: 'org-1',
-                userId: 'usr-emp1',
-                userName: currentUser.name,
-                projectId: manualForm.projectId,
-                projectName: proj ? proj.name : 'General Project',
-                taskTitle: manualForm.taskTitle || 'Manual Work',
-                hours: +manualForm.hours,
-                date: manualForm.date,
-                billable: manualForm.billable,
-                description: manualForm.description,
-              });
+              if (addTimeLog) {
+                await addTimeLog({
+                  projectId: manualForm.projectId,
+                  projectName: proj ? proj.name : 'General Project',
+                  taskTitle: manualForm.taskTitle || 'Manual Work',
+                  hours: +manualForm.hours,
+                  date: manualForm.date,
+                  billable: manualForm.billable,
+                  description: manualForm.description,
+                });
+              }
               setShowManualModal(false);
             }} className="space-y-4 text-xs">
               <div>

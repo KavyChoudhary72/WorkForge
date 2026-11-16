@@ -5,7 +5,7 @@ const paymentSchema = new mongoose.Schema(
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
-      required: true,
+      required: false,
       index: true
     },
     invoiceId: {
@@ -25,7 +25,7 @@ const paymentSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: ['Credit Card', 'Stripe', 'Razorpay', 'Bank Transfer', 'Cash', 'Other'],
+      enum: ['Credit Card', 'Stripe', 'Razorpay', 'UPI', 'Razorpay (UPI)', 'Bank Transfer', 'Cash', 'Other'],
       default: 'Bank Transfer'
     },
     status: {

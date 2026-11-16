@@ -9,29 +9,27 @@ import {
   Square,
   Clock,
   ChevronDown,
-  UserCheck,
   CheckCircle2,
   AlertCircle,
   Info,
   Shield,
   LogOut,
   Laptop,
-  Camera,
   Crop,
-  X,
   Settings,
   UserCircle,
-  Menu
+  Menu,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { UserAvatar, OrgLogo } from '../common/UserAvatar';
+import { UserAvatar } from '../common/UserAvatar';
 import ActiveSessionsModal from '../common/ActiveSessionsModal';
 import ImageCropperModal from '../common/ImageCropperModal';
 
-export default function TopBar({ onOpenSearch, activePage, setActivePage, onToggleMobileSidebar }) {
+export default function TopBar({ onOpenSearch, setActivePage, onToggleMobileSidebar }) {
   const { currentUser, currentOrg, darkMode, toggleDarkMode, logout, logoutAllDevices, updateUserProfileImage, updateCompanyLogo } = useAuth();
-  const { activeTimer, pauseTimer, resumeTimer, stopTimerAndSave, notifications, markNotificationRead } = useData();
+  const { activeTimer, pauseTimer, resumeTimer, stopTimerAndSave, notifications, markNotificationRead, dataLoading, lastSynced, refetchData } = useData();
 
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
@@ -100,6 +98,23 @@ export default function TopBar({ onOpenSearch, activePage, setActivePage, onTogg
 
         {/* Right Controls */}
         <div className="flex items-center space-x-3 sm:space-x-4">
+          {/* Real-time Backend Sync Status Badge */}
+          <button
+            onClick={() => refetchData && refetchData()}
+            disabled={dataLoading}
+            title={lastSynced ? `Last synchronized with MongoDB at ${lastSynced.toLocaleTimeString()}. Click to refresh.` : 'Click to fetch latest data from database'}
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-blue-600 dark:text-blue-400 ${dataLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline font-medium text-[11px]">
+              {dataLoading ? 'Fetching API...' : 'Live DB'}
+            </span>
+            <span className="relative flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${dataLoading ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${dataLoading ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+            </span>
+          </button>
+
           {/* Active Timer Widget */}
           <div className={`hidden md:flex items-center space-x-2.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
             activeTimer.isRunning

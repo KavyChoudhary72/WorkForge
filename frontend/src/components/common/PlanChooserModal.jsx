@@ -1,19 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, Crown, Shield, CreditCard, Loader2, ArrowLeft } from 'lucide-react';
-
-const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
+import { loadRazorpayScript } from '../../utils/loadRazorpay';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PlanChooserModal({
   onClose,
@@ -25,6 +13,7 @@ export default function PlanChooserModal({
   updateCurrentUser,
   currentPlan = 'Pro Plan'
 }) {
+  const { currentUser } = useAuth();
   const [cycle, setCycle] = useState('monthly'); // 'monthly' | 'quarterly' | 'annually'
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [activatingTrial, setActivatingTrial] = useState(false);
@@ -137,16 +126,24 @@ export default function PlanChooserModal({
         const { res: orderRes, data: orderData } = await apiFetch('/payments/subscription-order', {
           method: 'POST',
           body: JSON.stringify({ planName: plan.name, cycle }),
-          timeout: 4000
+          timeout: 8000
         });
-        if (orderRes && orderRes.ok && orderData) {
+        if (orderRes && orderRes.ok && orderData?.orderId) {
           keyId = orderData.keyId;
           orderId = orderData.orderId;
           amount = orderData.amount;
           currency = orderData.currency || 'INR';
+        } else if (orderData?.message) {
+          console.warn('[Razorpay] Subscription order error:', orderData.message);
         }
       } catch (err) {
-        console.warn('[Razorpay] Backend order generation unreachable, using resilient direct checkout:', err.message);
+        console.warn('[Razorpay] Backend order generation notice:', err.message);
+      }
+
+      if (!orderId) {
+        alert('Could not initialize subscription payment order with the server. Please check backend connection.');
+        setLoadingPlan(null);
+        return;
       }
 
       const planPrices = plan?.prices || {
@@ -157,7 +154,15 @@ export default function PlanChooserModal({
 
       const rawPrice = planPrices[cycle] || planPrices.monthly || 2499;
       const finalAmount = amount || (rawPrice * 100);
-      const finalKey = keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TeHTdeeDYTH92D';
+      // The public Razorpay Key ID is provided securely by backend in orderData.keyId
+      const finalKey = keyId;
+      if (!finalKey) {
+        alert('Payment gateway key is not available. Please ensure Razorpay is configured on the backend server.');
+        setLoadingPlan(null);
+        return;
+      }
+      const rawContact = currentUser?.phone || '9876543210';
+      const cleanContact = rawContact.replace(/[^0-9]/g, '').slice(-10) || '9876543210';
 
       const options = {
         key: finalKey,
@@ -165,10 +170,11 @@ export default function PlanChooserModal({
         currency: currency || 'INR',
         name: 'WorkForge Enterprise',
         description: `Upgrade to ${plan.name} (${cycle})`,
-        ...(orderId ? { order_id: orderId } : {}),
+        order_id: orderId,
         prefill: {
           name: currentUser?.name || 'Workspace Leader',
-          email: currentUser?.email || 'admin@workforge.io'
+          email: currentUser?.email || 'admin@workforge.io',
+          contact: cleanContact
         },
         handler: async function (response) {
           try {
@@ -182,13 +188,13 @@ export default function PlanChooserModal({
                   razorpayPaymentId: response.razorpay_payment_id,
                   razorpaySignature: response.razorpay_signature
                 }),
-                timeout: 4000
+                timeout: 8000
               });
               if (verifyRes?.ok && verifyData?.success && verifyData?.user) {
                 if (updateCurrentUser) updateCurrentUser(verifyData.user);
               }
             } catch (err) {
-              console.warn('[Razorpay] Verification server unreachable, applying verified client session:', err.message);
+              console.warn('[Razorpay] Verification server notice, applying client session:', err.message);
             }
 
             // Always update state smoothly so user is immediately upgraded
@@ -206,7 +212,7 @@ export default function PlanChooserModal({
             localStorage.setItem('nexus_user', JSON.stringify(updatedUser));
             if (silentRefresh) silentRefresh().catch(() => {});
 
-            setSuccessMessage(`Payment confirmed! You are now upgraded to ${plan.name}.`);
+            setSuccessMessage(`Payment confirmed via UPI/Razorpay! You are now upgraded to ${plan.name}.`);
             setTimeout(() => {
               if (onClose) onClose();
             }, 1200);
@@ -231,6 +237,15 @@ export default function PlanChooserModal({
       };
 
       const paymentObject = new window.Razorpay(options);
+
+      paymentObject.on('payment.failed', function (resp) {
+        console.error('[Razorpay Payment Failed]', resp.error);
+        if (resp.error?.description) {
+          alert(`Payment failed: ${resp.error.description}`);
+        }
+        setLoadingPlan(null);
+      });
+
       paymentObject.open();
     } catch (error) {
       console.error('Error during payment', error);

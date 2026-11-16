@@ -1,18 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Mail,
-  Briefcase,
   Building,
-  Phone,
-  Calendar,
-  Shield,
   Tag,
   Plus,
   X,
   Save,
   CheckCircle,
-  Crop
+  Crop,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -20,34 +17,72 @@ import { UserAvatar } from '../components/common/UserAvatar';
 import ImageCropperModal from '../components/common/ImageCropperModal';
 
 export default function ProfilePage() {
-  const { currentUser, updateUserProfileImage, apiFetch } = useAuth();
+  const { currentUser, updateUserProfileImage, apiFetch, updateCurrentUser } = useAuth();
   const { addNotification } = useData();
 
   const [showCropModal, setShowCropModal] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
 
   const [formData, setFormData] = useState({
-    name: currentUser?.name || 'Workspace Member',
-    email: currentUser?.email || 'user@workforge.in',
-    phone: currentUser?.phone || '+91 98765 00000',
-    department: currentUser?.department || 'Engineering',
-    designation: currentUser?.designation || 'Senior Full Stack Engineer',
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
+    department: currentUser?.department || '',
+    designation: currentUser?.designation || '',
     role: currentUser?.role || 'EMPLOYEE'
   });
 
-  const [skills, setSkills] = useState(['React.js', 'Node.js', 'MongoDB', 'Tailwind CSS', 'Docker', 'REST API', 'Socket.IO']);
+  const [skills, setSkills] = useState(currentUser?.skills || []);
   const [newSkillInput, setNewSkillInput] = useState('');
 
-  const handleAddSkill = (e) => {
+  useEffect(() => {
+    if (currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        name: currentUser.name || prev.name,
+        email: currentUser.email || prev.email,
+        phone: currentUser.phone || prev.phone,
+        department: currentUser.department || prev.department,
+        designation: currentUser.designation || prev.designation,
+        role: currentUser.role || prev.role
+      }));
+      if (Array.isArray(currentUser.skills)) {
+        setSkills(currentUser.skills);
+      }
+    }
+  }, [currentUser]);
+
+  const handleAddSkill = async (e) => {
     e.preventDefault();
-    if (newSkillInput.trim() && !skills.includes(newSkillInput.trim())) {
-      setSkills([...skills, newSkillInput.trim()]);
+    const trimmed = newSkillInput.trim();
+    if (trimmed && !skills.includes(trimmed)) {
+      const updatedSkills = [...skills, trimmed];
+      setSkills(updatedSkills);
       setNewSkillInput('');
+      try {
+        const { res, data } = await apiFetch('/users/profile', {
+          method: 'PUT',
+          body: JSON.stringify({ ...formData, skills: updatedSkills })
+        });
+        if (res.ok && updateCurrentUser) {
+          updateCurrentUser({ ...currentUser, ...formData, skills: updatedSkills });
+        }
+      } catch (_err) {}
     }
   };
 
-  const handleRemoveSkill = (skillToRemove) => {
-    setSkills(skills.filter(s => s !== skillToRemove));
+  const handleRemoveSkill = async (skillToRemove) => {
+    const updatedSkills = skills.filter(s => s !== skillToRemove);
+    setSkills(updatedSkills);
+    try {
+      const { res, data } = await apiFetch('/users/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ ...formData, skills: updatedSkills })
+      });
+      if (res.ok && updateCurrentUser) {
+        updateCurrentUser({ ...currentUser, ...formData, skills: updatedSkills });
+      }
+    } catch (_err) {}
   };
 
   const handleSaveProfile = async (e) => {
@@ -55,15 +90,18 @@ export default function ProfilePage() {
     try {
       const { res, data } = await apiFetch('/users/profile', {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, skills })
       });
       if (res.ok) {
+        if (updateCurrentUser) {
+          updateCurrentUser({ ...currentUser, ...formData, skills });
+        }
         setSavedMsg('Profile changes saved successfully.');
-        addNotification('Profile Updated', 'Your employee profile details have been saved.', 'success');
+        addNotification('Profile Updated', 'Your profile details and competencies have been saved.', 'success');
       } else {
         setSavedMsg('Profile updated locally.');
       }
-    } catch (err) {
+    } catch (_err) {
       setSavedMsg('Profile updated locally.');
     }
     setTimeout(() => setSavedMsg(''), 4000);
@@ -256,7 +294,7 @@ export default function ProfilePage() {
                 type="text"
                 value={newSkillInput}
                 onChange={(e) => setNewSkillInput(e.target.value)}
-                placeholder="Add new competency (e.g. AWS, GraphQL)..."
+                placeholder="Add new skill..."
                 className="flex-1 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs font-medium"
               />
               <button

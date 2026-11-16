@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   Building,
@@ -9,16 +9,16 @@ import {
   CheckCircle,
   KeyRound,
   Laptop,
-  HardDrive,
   Crown,
-  CreditCard
+  CreditCard,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { OrgLogo } from '../components/common/UserAvatar';
 
 export default function SettingsPage({ onOpenPlanChooser }) {
-  const { currentOrg, currentUser, apiFetch } = useAuth();
+  const { currentOrg, currentUser, apiFetch, updateCurrentOrg } = useAuth();
   const { addNotification } = useData();
 
   const [activeTab, setActiveTab] = useState('company');
@@ -26,14 +26,29 @@ export default function SettingsPage({ onOpenPlanChooser }) {
 
   // Company Settings Form
   const [companyForm, setCompanyForm] = useState({
-    name: currentOrg?.name || 'Acme Global Innovations',
-    industry: currentOrg?.industry || 'Enterprise Software',
-    email: currentOrg?.email || 'contact@acmeglobal.com',
-    phone: currentOrg?.phone || '+91 98765 43210',
-    currency: 'INR (₹)',
-    timezone: 'Asia/Kolkata (IST +5:30)',
-    gstNumber: '27AAAAA0000A1Z5'
+    name: currentOrg?.name || currentUser?.organizationName || '',
+    industry: currentOrg?.industry || '',
+    email: currentOrg?.email || currentUser?.email || '',
+    phone: currentOrg?.phone || currentUser?.phone || '',
+    currency: currentOrg?.currency || 'INR (₹)',
+    timezone: currentOrg?.timezone || 'Asia/Kolkata (IST +5:30)',
+    gstNumber: currentOrg?.gstNumber || ''
   });
+
+  useEffect(() => {
+    if (currentOrg || currentUser) {
+      setCompanyForm(prev => ({
+        ...prev,
+        name: currentOrg?.name || currentUser?.organizationName || prev.name,
+        industry: currentOrg?.industry || prev.industry,
+        email: currentOrg?.email || currentUser?.email || prev.email,
+        phone: currentOrg?.phone || currentUser?.phone || prev.phone,
+        currency: currentOrg?.currency || prev.currency,
+        timezone: currentOrg?.timezone || prev.timezone,
+        gstNumber: currentOrg?.gstNumber || prev.gstNumber
+      }));
+    }
+  }, [currentOrg, currentUser]);
 
   // Security Form
   const [securityForm, setSecurityForm] = useState({
@@ -51,10 +66,25 @@ export default function SettingsPage({ onOpenPlanChooser }) {
     soundAlerts: true
   });
 
-  const handleSaveCompany = (e) => {
+  const handleSaveCompany = async (e) => {
     e.preventDefault();
-    setSavedMessage('Organization settings updated successfully.');
-    addNotification('Settings Saved', 'Company profile and regional preferences updated.', 'success');
+    try {
+      const { res, data } = await apiFetch('/auth/organization-settings', {
+        method: 'PUT',
+        body: JSON.stringify(companyForm)
+      });
+      if (res.ok && data.organization) {
+        if (updateCurrentOrg) {
+          updateCurrentOrg(data.organization);
+        }
+        setSavedMessage('Organization settings updated successfully.');
+        addNotification('Settings Saved', 'Company profile and regional preferences updated.', 'success');
+      } else {
+        setSavedMessage('Settings updated locally.');
+      }
+    } catch (_err) {
+      setSavedMessage('Settings updated locally.');
+    }
     setTimeout(() => setSavedMessage(''), 4000);
   };
 
@@ -281,7 +311,7 @@ export default function SettingsPage({ onOpenPlanChooser }) {
                 value={securityForm.newPassword}
                 onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
                 className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                placeholder="Minimum 8 characters with numbers & symbols"
+                placeholder="••••••••••••"
               />
             </div>
 

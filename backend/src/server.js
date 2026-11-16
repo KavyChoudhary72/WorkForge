@@ -1,9 +1,3 @@
-import dns from "node:dns";
-try {
-  if (process.env.NODE_ENV !== 'production' && !process.env.RAILWAY_ENVIRONMENT) {
-    dns.setServers(["1.1.1.1", "1.0.0.1"]);
-  }
-} catch (e) {}
 import http from 'http';
 import path from 'path';
 import express from 'express';
@@ -58,31 +52,20 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // Static uploads serving for file downloads and previews
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Comprehensive CORS and Preflight handling for Vercel and production clients
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept');
-  }
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
+// Cross-Origin Resource Sharing (CORS) Configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, server-to-server) or any web origin
+    callback(null, origin || true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200
+};
 
-app.use(
-  cors({
-    origin: (origin, callback) => callback(null, origin || true),
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    optionsSuccessStatus: 200
-  })
-);
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Rate Limiting for Authentication Endpoints
 const authLimiter = rateLimit({

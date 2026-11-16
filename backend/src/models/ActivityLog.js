@@ -23,32 +23,7 @@ const activityLogSchema = new mongoose.Schema(
     },
     action: {
       type: String,
-      required: true,
-      enum: [
-        'Login',
-        'Logout',
-        'PasswordReset',
-        'PasswordChange',
-        'EmailVerification',
-        'AccountCreation',
-        'RoleChange',
-        'SuspendedAccount',
-        'FailedLoginAttempt',
-        'TenantSuspension',
-        'TokenRefresh',
-        'SessionTimeout',
-        'LogoutAllDevices',
-        'TaskCreated',
-        'TaskUpdated',
-        'TaskDeleted',
-        'ProjectCreated',
-        'ProjectUpdated',
-        'ProjectDeleted',
-        'FileUpload',
-        'FileDeleted',
-        'InvoiceCreated',
-        'InvoiceStatusUpdate'
-      ]
+      required: true
     },
     details: {
       type: String,

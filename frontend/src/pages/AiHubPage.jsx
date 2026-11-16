@@ -1,49 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, CheckCircle2, AlertTriangle, FileText, Clock, Zap, Loader2, Info } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertTriangle, FileText, Clock, Zap, Loader2 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../services/api';
-
-const API_BASE_URL = getApiBaseUrl();
-
-const DEFAULT_FALLBACK_PROJECT = {
-  id: 'default-prj-1',
-  name: 'Q4 Omnichannel Retail Expansion Strategy',
-  budget: 150000,
-  spent: 85000,
-  status: 'In Progress',
-  clientName: 'RetailCorp Global',
-  description: 'Enterprise retail expansion across 15 regional distribution hubs with vendor SLA optimization.',
-  tasksCount: 6
-};
 
 export default function AiHubPage() {
   const { projects = [], tasks = [] } = useData();
+  const { apiFetch } = useAuth();
 
-  // Selected Project State with automatic fallback
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[0]?.id || DEFAULT_FALLBACK_PROJECT.id);
+  // Selected Project State
+  const [selectedProjectId, setSelectedProjectId] = useState(projects[0]?.id || '');
 
   // Sync selectedProjectId when projects array changes
   useEffect(() => {
-    if (projects.length > 0 && (!selectedProjectId || selectedProjectId === DEFAULT_FALLBACK_PROJECT.id)) {
+    if (projects.length > 0 && !selectedProjectId) {
       setSelectedProjectId(projects[0].id);
     }
-  }, [projects]);
+  }, [projects, selectedProjectId]);
 
   // Tool 1: AI Health Score State
   const [healthResult, setHealthResult] = useState(null);
   const [loadingHealth, setLoadingHealth] = useState(false);
   const [errorHealth, setErrorHealth] = useState('');
 
-  // Tool 2: AI Task Estimation State (Business Scenario)
-  const [taskInput, setTaskInput] = useState('Audit Q3 regional marketing expenditure, negotiate revised supplier SLAs, and prepare final executive deck for board sign-off.');
+  // Tool 2: AI Task Estimation State
+  const [taskInput, setTaskInput] = useState('');
   const [estimationResult, setEstimationResult] = useState(null);
   const [loadingEstimation, setLoadingEstimation] = useState(false);
   const [errorEstimation, setErrorEstimation] = useState('');
 
-  // Tool 3: AI Meeting Notes Summarizer State (Business Scenario)
-  const [meetingNotesInput, setMeetingNotesInput] = useState(`Meeting Notes - Q4 Omnichannel Strategy Review Call (Aug 4)
-Attendees: Sarah Chen (Account Director), Jonathan Hayes (Client VP), David Miller (Operations Lead).
-Discussion: Jonathan expressed satisfaction with the new retail distribution rollout but requested bi-weekly inventory audit reports before final campaign expansion on Sept 30. David Miller confirmed vendor SLA agreements are 90% finalized. Sarah to schedule financial audit review for Aug 20.`);
+  // Tool 3: AI Meeting Notes Summarizer State
+  const [meetingNotesInput, setMeetingNotesInput] = useState('');
   const [summaryResult, setSummaryResult] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [errorSummary, setErrorSummary] = useState('');
@@ -54,20 +41,24 @@ Discussion: Jonathan expressed satisfaction with the new retail distribution rol
       const found = projects.find(p => p.id === selectedProjectId);
       return found || projects[0];
     }
-    return DEFAULT_FALLBACK_PROJECT;
+    return null;
   };
 
   // Handler 1: AI Project Health Audit
   const runHealthAudit = async () => {
+    const targetProject = getTargetProject();
+    if (!targetProject) {
+      setErrorHealth('Please create or select an active project to run an AI Health Audit.');
+      return;
+    }
     setLoadingHealth(true);
     setErrorHealth('');
-    const targetProject = getTargetProject();
     
     // Gather matching tasks for project grounding
     const projectTasks = tasks.filter(t => t.projectId === targetProject.id);
     const tasksSummary = projectTasks.length > 0 
       ? projectTasks.map(t => `${t.title} (${t.status})`).join(', ')
-      : `${targetProject.tasksCount || 4} active operational deliverables`;
+      : `${targetProject.tasksCount || 0} active deliverables`;
 
     const projectPayload = {
       ...targetProject,
@@ -75,16 +66,22 @@ Discussion: Jonathan expressed satisfaction with the new retail distribution rol
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/health-audit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project: projectPayload })
-      });
-
-      const resData = await response.json();
-
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.message || 'Failed to compute AI Health Audit.');
+      let resData;
+      if (apiFetch) {
+        const { res, data } = await apiFetch('/ai/health-audit', {
+          method: 'POST',
+          body: JSON.stringify({ project: projectPayload })
+        });
+        if (!res?.ok || !data?.success) throw new Error(data?.message || 'Failed to compute AI Health Audit.');
+        resData = data;
+      } else {
+        const response = await fetch(`${getApiBaseUrl()}/ai/health-audit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project: projectPayload })
+        });
+        resData = await response.json();
+        if (!response.ok || !resData.success) throw new Error(resData.message || 'Failed to compute AI Health Audit.');
       }
 
       setHealthResult(resData.data);
@@ -104,19 +101,27 @@ Discussion: Jonathan expressed satisfaction with the new retail distribution rol
     const targetProject = getTargetProject();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/estimate-task`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          taskDescription: taskInput,
-          projectName: targetProject?.name
-        })
-      });
+      let resData;
+      const payload = {
+        taskDescription: taskInput,
+        projectName: targetProject?.name
+      };
 
-      const resData = await response.json();
-
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.message || 'Failed to estimate task workload.');
+      if (apiFetch) {
+        const { res, data } = await apiFetch('/ai/estimate-task', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (!res?.ok || !data?.success) throw new Error(data?.message || 'Failed to estimate task workload.');
+        resData = data;
+      } else {
+        const response = await fetch(`${getApiBaseUrl()}/ai/estimate-task`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        resData = await response.json();
+        if (!response.ok || !resData.success) throw new Error(resData.message || 'Failed to estimate task workload.');
       }
 
       setEstimationResult(resData.data);
@@ -135,16 +140,22 @@ Discussion: Jonathan expressed satisfaction with the new retail distribution rol
     setErrorSummary('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/summarize-notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meetingNotes: meetingNotesInput })
-      });
-
-      const resData = await response.json();
-
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.message || 'Failed to summarize meeting notes.');
+      let resData;
+      if (apiFetch) {
+        const { res, data } = await apiFetch('/ai/summarize-notes', {
+          method: 'POST',
+          body: JSON.stringify({ meetingNotes: meetingNotesInput })
+        });
+        if (!res?.ok || !data?.success) throw new Error(data?.message || 'Failed to summarize meeting notes.');
+        resData = data;
+      } else {
+        const response = await fetch(`${getApiBaseUrl()}/ai/summarize-notes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meetingNotes: meetingNotesInput })
+        });
+        resData = await response.json();
+        if (!response.ok || !resData.success) throw new Error(resData.message || 'Failed to summarize meeting notes.');
       }
 
       setSummaryResult(resData.data);
@@ -254,24 +265,28 @@ Discussion: Jonathan expressed satisfaction with the new retail distribution rol
                       </option>
                     ))
                   ) : (
-                    <option value={DEFAULT_FALLBACK_PROJECT.id}>
-                      {DEFAULT_FALLBACK_PROJECT.name} (₹{DEFAULT_FALLBACK_PROJECT.budget.toLocaleString('en-IN')})
-                    </option>
+                    <option value="">No projects found in workspace</option>
                   )}
                 </select>
               </div>
 
               {/* Active Project Details Chip */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 text-xs space-y-1">
-                <div className="flex justify-between text-slate-700 dark:text-slate-300 font-semibold">
-                  <span>Client: <strong>{activeProject.clientName || 'Key Account'}</strong></span>
-                  <span>Budget: <strong className="text-emerald-600 dark:text-emerald-400">₹{activeProject.budget ? activeProject.budget.toLocaleString('en-IN') : 0}</strong></span>
+              {activeProject ? (
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 text-xs space-y-1">
+                  <div className="flex justify-between text-slate-700 dark:text-slate-300 font-semibold">
+                    <span>Client: <strong>{activeProject.clientName || 'Key Account'}</strong></span>
+                    <span>Budget: <strong className="text-emerald-600 dark:text-emerald-400">₹{activeProject.budget ? activeProject.budget.toLocaleString('en-IN') : 0}</strong></span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span>Spent to date: ₹{activeProject.spent ? activeProject.spent.toLocaleString('en-IN') : 0}</span>
+                    <span>Status: <span className="font-bold text-blue-600 dark:text-blue-400">{activeProject.status || 'Active'}</span></span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Spent to date: ₹{activeProject.spent ? activeProject.spent.toLocaleString('en-IN') : 0}</span>
-                  <span>Status: <span className="font-bold text-blue-600 dark:text-blue-400">{activeProject.status || 'Active'}</span></span>
+              ) : (
+                <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-xs text-slate-500 text-center">
+                  Create a project to analyze risk & health metrics
                 </div>
-              </div>
+              )}
 
               <button
                 onClick={runHealthAudit}

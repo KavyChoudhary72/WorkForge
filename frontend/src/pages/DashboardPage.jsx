@@ -7,7 +7,6 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowUpRight,
-  ArrowDownRight,
   Sparkles,
   Users,
   ShieldCheck,
@@ -23,10 +22,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
+  ResponsiveContainer
 } from 'recharts';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -45,27 +41,44 @@ export default function DashboardPage({ setActivePage, onOpenPlanChooser }) {
   const totalTasksCount = tasks.length || 1;
   const taskCompletionRate = Math.round((completedTasksCount / totalTasksCount) * 100);
 
-  // Revenue Trend Chart Mock Data
-  const financialData = [
-    { month: 'Jan', revenue: 42000, expenses: 18000 },
-    { month: 'Feb', revenue: 58000, expenses: 22000 },
-    { month: 'Mar', revenue: 64000, expenses: 24000 },
-    { month: 'Apr', revenue: 78000, expenses: 28000 },
-    { month: 'May', revenue: 92000, expenses: 31000 },
-    { month: 'Jun', revenue: 110000, expenses: 35000 },
-    { month: 'Jul', revenue: 148500, expenses: 42000 },
-  ];
+  // Dynamic Revenue Trend Chart Data from actual invoices
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentMonthIdx = new Date().getMonth();
+  const recentMonths = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(currentMonthIdx - i);
+    recentMonths.push({ name: months[d.getMonth()], monthNum: d.getMonth(), year: d.getFullYear() });
+  }
 
-  // Task Weekly Velocity Data
-  const taskWeeklyData = [
-    { day: 'Mon', completed: 8, created: 10 },
-    { day: 'Tue', completed: 12, created: 9 },
-    { day: 'Wed', completed: 15, created: 11 },
-    { day: 'Thu', completed: 11, created: 7 },
-    { day: 'Fri', completed: 18, created: 14 },
-    { day: 'Sat', completed: 6, created: 3 },
-    { day: 'Sun', completed: 4, created: 2 },
-  ];
+  const financialData = recentMonths.map(m => {
+    const monthInvoices = invoices.filter(inv => {
+      const invDate = inv.issueDate || inv.createdAt;
+      if (!invDate) return false;
+      const d = new Date(invDate);
+      return d.getMonth() === m.monthNum && d.getFullYear() === m.year;
+    });
+    const revenue = monthInvoices
+      .filter(i => i.status === 'Paid')
+      .reduce((sum, i) => sum + (Number(i.totalAmount) || 0), 0);
+    const expenses = Math.round(revenue * 0.2);
+    return { month: m.name, revenue, expenses };
+  });
+
+  // Dynamic Task Velocity Data from real tasks
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const taskWeeklyData = days.map(day => {
+    const completed = tasks.filter(t => {
+      if (t.status !== 'Completed' && t.status !== 'Done') return false;
+      const d = new Date(t.updatedAt || t.dueDate || Date.now());
+      return d.toLocaleDateString('en-US', { weekday: 'short' }) === day;
+    }).length;
+    const created = tasks.filter(t => {
+      const d = new Date(t.createdAt || Date.now());
+      return d.toLocaleDateString('en-US', { weekday: 'short' }) === day;
+    }).length;
+    return { day, completed, created };
+  });
 
   // Upcoming Deadlines (Projects & Tasks)
   const upcomingDeadlines = [

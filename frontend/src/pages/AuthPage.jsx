@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Lock, Mail, ArrowRight, CheckCircle, Building2, User, AlertCircle, KeyRound, Check, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Lock, Mail, ArrowRight, CheckCircle, Building2, User, AlertCircle, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import WorkForgeLogo from '../components/common/WorkForgeLogo';
 
 export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBackToHome }) {
-  const { login, registerCompany, resetPasswordEmail, submitResetPassword, verifyEmailToken, loading, authError } = useAuth();
+  const { login, registerCompany, resetPasswordEmail, submitResetPassword, loading, authError } = useAuth();
   
   // Auth Modes: 'login' | 'signup'
   const [mode, setMode] = useState(initialMode);
@@ -251,6 +251,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                   </>
                 )}
               </button>
+
             </form>
           ) : (
             /* SIGN UP FORM */
@@ -267,7 +268,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
-                    placeholder="e.g. Jane Doe"
+                    placeholder="Full name"
                   />
                 </div>
               </div>
@@ -284,7 +285,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
-                    placeholder="e.g. Acme Studios"
+                    placeholder="Company name"
                   />
                 </div>
               </div>
@@ -301,7 +302,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-blue-600"
-                    placeholder="jane@acme.com"
+                    placeholder="Email address"
                   />
                 </div>
               </div>

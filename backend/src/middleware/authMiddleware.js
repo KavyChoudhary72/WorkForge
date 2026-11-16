@@ -32,7 +32,6 @@ export const protect = async (req, res, next) => {
 
     const orgId = user.role === 'SUPER_ADMIN' ? null : (user.organizationId?._id || user.organizationId || null);
 
-    const isPeter = user.email === 'peter@oscorp.com';
     req.user = {
       id: user._id,
       userId: user._id,
@@ -45,10 +44,10 @@ export const protect = async (req, res, next) => {
       permissions: user.permissions || [],
       accountStatus: user.accountStatus,
       isEmailVerified: user.isEmailVerified,
-      plan: isPeter ? 'Pro Plan' : (user.organizationId?.plan || 'None'),
-      trialActivated: isPeter ? false : (user.organizationId?.trialActivated || false),
-      trialStartDate: user.organizationId?.trialStartDate,
-      trialEndDate: user.organizationId?.trialEndDate
+      plan: user.subscriptionDetails?.plan || user.organizationId?.plan || 'None',
+      trialActivated: user.subscriptionDetails?.trialActivated !== undefined ? user.subscriptionDetails.trialActivated : (user.organizationId?.trialActivated || false),
+      trialStartDate: user.subscriptionDetails?.trialStartDate || user.organizationId?.trialStartDate,
+      trialEndDate: user.subscriptionDetails?.trialEndDate || user.organizationId?.trialEndDate
     };
 
     next();

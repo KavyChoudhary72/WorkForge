@@ -1,26 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Building2,
   Plus,
   Search,
   HardDrive,
-  Users,
   Shield,
-  TrendingUp,
-  SlidersHorizontal,
-  CheckCircle2,
-  XCircle,
-  MoreVertical,
-  Camera,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { OrgLogo } from '../components/common/UserAvatar';
 
 export default function OrganizationMgmtPage() {
-  const { organizationsList, currentOrg, currentUser } = useAuth();
+  const { currentUser } = useAuth();
+  const { organizations = [] } = useData();
 
   const isSuperAdmin = currentUser?.role === 'Super Admin' || currentUser?.role === 'SUPER_ADMIN';
+
+  // React Hooks must always be declared unconditionally at top of component
+  const [search, setSearch] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [orgs, setOrgs] = useState(organizations);
+
+  useEffect(() => {
+    if (organizations) {
+      setOrgs(organizations);
+    }
+  }, [organizations]);
+
+  const [newOrg, setNewOrg] = useState({
+    name: '',
+    slug: '',
+    logo: '',
+    plan: 'Starter',
+    departments: 'Engineering, Sales, Marketing',
+  });
 
   if (!isSuperAdmin) {
     return (
@@ -33,36 +46,6 @@ export default function OrganizationMgmtPage() {
       </div>
     );
   }
-
-  const [search, setSearch] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const defaultOrgList = [
-    { id: 'c-1', name: 'TechNova Solutions', industry: 'Software Development', email: 'admin@technova.com', phone: '+91-9876543210', plan: 'Enterprise', subscriptionPlan: 'Enterprise', activeUsersCount: 120, employeeCount: 120, storageUsed: 45, storageLimit: 100, status: 'Active', createdAt: '2026-01-15' },
-    { id: 'c-2', name: 'PixelCraft Studio', industry: 'UI/UX Design Agency', email: 'contact@pixelcraft.com', phone: '+91-9876500011', plan: 'Pro', subscriptionPlan: 'Pro', activeUsersCount: 35, employeeCount: 35, storageUsed: 12, storageLimit: 50, status: 'Active', createdAt: '2026-01-16' },
-    { id: 'c-3', name: 'GrowthX Marketing', industry: 'Digital Marketing', email: 'admin@growthx.com', phone: '+91-9876500012', plan: 'Pro', subscriptionPlan: 'Pro', activeUsersCount: 60, employeeCount: 60, storageUsed: 18, storageLimit: 50, status: 'Active', createdAt: '2026-01-17' },
-    { id: 'c-4', name: 'BuildSmart Constructions', industry: 'Construction', email: 'office@buildsmart.com', phone: '+91-9876500013', plan: 'Business', subscriptionPlan: 'Business', activeUsersCount: 250, employeeCount: 250, storageUsed: 75, storageLimit: 100, status: 'Active', createdAt: '2026-01-18' },
-    { id: 'c-5', name: 'MediCare Plus', industry: 'Healthcare', email: 'support@medicareplus.com', phone: '+91-9876500014', plan: 'Enterprise', subscriptionPlan: 'Enterprise', activeUsersCount: 180, employeeCount: 180, storageUsed: 55, storageLimit: 100, status: 'Active', createdAt: '2026-01-19' },
-    { id: 'c-6', name: 'EduSpark Academy', industry: 'Education', email: 'admin@eduspark.com', phone: '+91-9876500015', plan: 'Business', subscriptionPlan: 'Business', activeUsersCount: 90, employeeCount: 90, storageUsed: 20, storageLimit: 50, status: 'Active', createdAt: '2026-01-20' },
-    { id: 'c-7', name: 'FinEdge Consulting', industry: 'Finance', email: 'contact@finedge.com', phone: '+91-9876500016', plan: 'Enterprise', subscriptionPlan: 'Enterprise', activeUsersCount: 75, employeeCount: 75, storageUsed: 28, storageLimit: 100, status: 'Active', createdAt: '2026-01-21' },
-    { id: 'c-8', name: 'UrbanKart Retail', industry: 'E-Commerce', email: 'admin@urbankart.com', phone: '+91-9876500017', plan: 'Business', subscriptionPlan: 'Business', activeUsersCount: 110, employeeCount: 110, storageUsed: 34, storageLimit: 100, status: 'Active', createdAt: '2026-01-22' },
-    { id: 'c-9', name: 'AgriTech Innovations', industry: 'Agriculture Technology', email: 'support@agritech.com', phone: '+91-9876500018', plan: 'Pro', subscriptionPlan: 'Pro', activeUsersCount: 40, employeeCount: 40, storageUsed: 15, storageLimit: 50, status: 'Active', createdAt: '2026-01-23' },
-    { id: 'c-10', name: 'SkyNet Logistics', industry: 'Logistics', email: 'contact@skynetlogistics.com', phone: '+91-9876500019', plan: 'Enterprise', subscriptionPlan: 'Enterprise', activeUsersCount: 300, employeeCount: 300, storageUsed: 90, storageLimit: 200, status: 'Active', createdAt: '2026-01-24' },
-    { id: 'c-11', name: 'BlueOcean Travels', industry: 'Travel & Tourism', email: 'admin@blueocean.com', phone: '+91-9876500020', plan: 'Pro', subscriptionPlan: 'Pro', activeUsersCount: 28, employeeCount: 28, storageUsed: 10, storageLimit: 50, status: 'Active', createdAt: '2026-01-25' },
-    { id: 'c-12', name: 'AutoDrive Motors', industry: 'Automobile', email: 'office@autodrive.com', phone: '+91-9876500021', plan: 'Business', subscriptionPlan: 'Business', activeUsersCount: 220, employeeCount: 220, storageUsed: 65, storageLimit: 100, status: 'Active', createdAt: '2026-01-26' },
-    { id: 'c-13', name: 'GreenLeaf Energy', industry: 'Renewable Energy', email: 'contact@greenleaf.com', phone: '+91-9876500022', plan: 'Enterprise', subscriptionPlan: 'Enterprise', activeUsersCount: 150, employeeCount: 150, storageUsed: 50, storageLimit: 100, status: 'Active', createdAt: '2026-01-27' },
-    { id: 'c-14', name: 'LegalEase Associates', industry: 'Legal Services', email: 'admin@legalease.com', phone: '+91-9876500023', plan: 'Pro', subscriptionPlan: 'Pro', activeUsersCount: 22, employeeCount: 22, storageUsed: 8, storageLimit: 50, status: 'Active', createdAt: '2026-01-28' },
-    { id: 'c-15', name: 'FoodHub Restaurants', industry: 'Food & Beverage', email: 'support@foodhub.com', phone: '+91-9876500024', plan: 'Business', subscriptionPlan: 'Business', activeUsersCount: 95, employeeCount: 95, storageUsed: 25, storageLimit: 50, status: 'Suspended', createdAt: '2026-01-29' }
-  ];
-
-  const [orgs, setOrgs] = useState(organizationsList && organizationsList.length > 0 ? organizationsList : defaultOrgList);
-
-  const [newOrg, setNewOrg] = useState({
-    name: '',
-    slug: '',
-    logo: '',
-    plan: 'Starter',
-    departments: 'Engineering, Sales, Marketing',
-  });
 
   const filteredOrgs = orgs.filter(o =>
     o.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -257,7 +240,7 @@ export default function OrganizationMgmtPage() {
                   value={newOrg.name}
                   onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
                   className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium"
-                  placeholder="e.g. Oscorp Industries"
+                  placeholder="Organization name"
                 />
               </div>
 
@@ -268,7 +251,7 @@ export default function OrganizationMgmtPage() {
                   value={newOrg.slug}
                   onChange={(e) => setNewOrg({ ...newOrg, slug: e.target.value })}
                   className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-mono"
-                  placeholder="oscorp"
+                  placeholder="organization-slug"
                 />
               </div>
 

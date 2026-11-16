@@ -21,7 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserAvatar } from '../components/common/UserAvatar';
 
 export default function TaskMgmtPage() {
-  const { tasks, projects, teamMembers, addTask, updateTask, deleteTask } = useData();
+  const { tasks, projects, teamMembers, addTask, updateTask, deleteTask, dataLoading } = useData();
   const { currentUser, apiFetch } = useAuth();
   const [search, setSearch] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
@@ -50,15 +50,15 @@ export default function TaskMgmtPage() {
     description: '',
     projectId: projects[0]?.id || '',
     assigneeId: teamMembers[0]?.id || '',
-    dueDate: '2026-08-15',
-    priority: 'High',
-    estimatedHours: 16,
-    checklistInput: 'Configure Auth logic, Run tests',
-    labelsInput: 'Backend, Feature',
+    dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    priority: 'Medium',
+    estimatedHours: 4,
+    checklistInput: '',
+    labelsInput: '',
     attachmentName: ''
   });
 
-  const handleCreateTask = (e) => {
+  const handleCreateTask = async (e) => {
     e.preventDefault();
     const project = projects.find(p => p.id === newTask.projectId);
     const assignee = teamMembers.find(m => m.id === newTask.assigneeId);
@@ -82,7 +82,7 @@ export default function TaskMgmtPage() {
       }
     ] : [];
 
-    addTask({
+    const res = await addTask({
       ...newTask,
       status: 'Todo',
       projectName: project ? project.name : 'General Project',
@@ -95,19 +95,21 @@ export default function TaskMgmtPage() {
       aiRiskLevel: 'Low',
     });
 
-    setShowAddModal(false);
-    setNewTask({
-      title: '',
-      description: '',
-      projectId: projects[0]?.id || '',
-      assigneeId: teamMembers[0]?.id || '',
-      dueDate: '2026-08-15',
-      priority: 'High',
-      estimatedHours: 16,
-      checklistInput: 'Configure Auth logic, Run tests',
-      labelsInput: 'Backend, Feature',
-      attachmentName: ''
-    });
+    if (res && res.success !== false) {
+      setShowAddModal(false);
+      setNewTask({
+        title: '',
+        description: '',
+        projectId: projects[0]?.id || '',
+        assigneeId: teamMembers[0]?.id || '',
+        dueDate: '2026-08-15',
+        priority: 'High',
+        estimatedHours: 16,
+        checklistInput: 'Configure Auth logic, Run tests',
+        labelsInput: 'Backend, Feature',
+        attachmentName: ''
+      });
+    }
   };
 
   const moveTaskStatus = (taskId, newStatus) => {
@@ -559,7 +561,7 @@ export default function TaskMgmtPage() {
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                   className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                  placeholder="e.g. Write end-to-end integration tests"
+                  placeholder="Task title"
                 />
               </div>
 
@@ -629,7 +631,7 @@ export default function TaskMgmtPage() {
                   value={newTask.attachmentName}
                   onChange={(e) => setNewTask({ ...newTask, attachmentName: e.target.value })}
                   className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                  placeholder="e.g. TestCoverageReport.pdf"
+                  placeholder="Attachment file name"
                 />
               </div>
 
@@ -640,7 +642,7 @@ export default function TaskMgmtPage() {
                   value={newTask.checklistInput}
                   onChange={(e) => setNewTask({ ...newTask, checklistInput: e.target.value })}
                   className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                  placeholder="Task item 1, Task item 2"
+                  placeholder="Checklist items (comma separated)"
                 />
               </div>
 
@@ -654,9 +656,10 @@ export default function TaskMgmtPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl"
+                  disabled={dataLoading}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl disabled:opacity-50"
                 >
-                  Create Task
+                  {dataLoading ? 'Creating in Database...' : 'Create Task'}
                 </button>
               </div>
             </form>

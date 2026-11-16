@@ -24,42 +24,29 @@ import { useAuth } from '../context/AuthContext';
 import { UserAvatar } from '../components/common/UserAvatar';
 
 export default function TeamMgmtPage() {
-  const { teamMembers = [], addNotification, formatINR } = useData();
+  const { teamMembers = [], addNotification, refetchData } = useData();
   const { apiFetch } = useAuth();
   const [activeTab, setActiveTab] = useState('directory'); // 'directory' | 'attendance' | 'leaves'
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [submittingMember, setSubmittingMember] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [selectedPerformanceEmployee, setSelectedPerformanceEmployee] = useState(null);
 
-  // Clock-in State for Attendance
-  const [clockedIn, setClockedIn] = useState(true);
-  const [clockInTime, setClockInTime] = useState('09:30 AM');
-
   // Attendance Records State
-  const [attendanceList, setAttendanceList] = useState([
-    { id: 'att-1', name: 'Sarah Chen', department: 'Executive Management', clockIn: '09:15 AM', clockOut: '06:30 PM', status: 'Present', hours: 9.25 },
-    { id: 'att-2', name: 'David Miller', department: 'Operations', clockIn: '09:45 AM', clockOut: '06:45 PM', status: 'Late', hours: 9.0 },
-    { id: 'att-3', name: 'Ananya Sharma', department: 'Client Deliverables', clockIn: '09:20 AM', clockOut: '06:15 PM', status: 'Present', hours: 8.9 },
-    { id: 'att-4', name: 'Rahul Verma', department: 'Financial Operations', clockIn: '-', clockOut: '-', status: 'On Leave', hours: 0 },
-    { id: 'att-5', name: 'Priya Patel', department: 'Product & Design', clockIn: '09:05 AM', clockOut: '06:00 PM', status: 'Present', hours: 8.95 }
-  ]);
+  const [attendanceList, setAttendanceList] = useState([]);
 
   // Leave Requests State
-  const [leaveRequests, setLeaveRequests] = useState([
-    { id: 'lve-101', name: 'Rahul Verma', type: 'Casual Leave', dates: '2026-08-14 to 2026-08-16', days: 3, reason: 'Family Function in Jaipur', status: 'Approved' },
-    { id: 'lve-102', name: 'Ananya Sharma', type: 'Sick Leave', dates: '2026-08-20', days: 1, reason: 'Medical Appointment', status: 'Pending' },
-    { id: 'lve-103', name: 'David Miller', type: 'Earned Leave', dates: '2026-09-01 to 2026-09-05', days: 5, reason: 'Annual Vacation', status: 'Approved' }
-  ]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
 
-  // Fetch real leaves from backend if available
+  // Fetch real leaves and attendance from backend if available
   useEffect(() => {
-    const fetchLeaves = async () => {
+    const fetchLeavesAndAttendance = async () => {
       try {
         if (apiFetch) {
           const { res, data } = await apiFetch('/leaves');
-          if (res.ok && Array.isArray(data) && data.length > 0) {
+          if (res?.ok && Array.isArray(data)) {
             setLeaveRequests(data.map(l => ({
               id: l._id || l.id,
               name: l.name || (l.userId?.name) || 'Employee',
@@ -70,16 +57,28 @@ export default function TeamMgmtPage() {
               status: l.status
             })));
           }
+
+          const { res: attRes, data: attData } = await apiFetch('/attendance');
+          if (attRes?.ok && Array.isArray(attData)) {
+            setAttendanceList(attData.map(a => ({
+              id: a._id || a.id,
+              name: a.userId?.name || a.name || 'Member',
+              department: a.userId?.department || a.department || 'Operations',
+              clockIn: a.clockIn || '09:00 AM',
+              status: a.status || 'Present',
+              hours: a.hours || 0
+            })));
+          }
         }
       } catch (err) {
-        // Fallback to local state
+        // Fallback safely
       }
     };
-    fetchLeaves();
+    fetchLeavesAndAttendance();
   }, [apiFetch]);
 
   const [newLeave, setNewLeave] = useState({
-    name: 'Current Employee',
+    name: '',
     type: 'Casual Leave',
     startDate: '',
     endDate: '',
@@ -89,12 +88,12 @@ export default function TeamMgmtPage() {
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
-    title: 'Senior Operations Associate',
+    title: '',
     department: 'Operations',
     role: 'EMPLOYEE',
-    salaryLPA: '12.5 LPA',
+    salaryLPA: '',
     joiningDate: new Date().toISOString().split('T')[0],
-    skills: 'React, Node.js, Cloud',
+    skills: '',
     avatar: ''
   });
 
@@ -108,15 +107,53 @@ export default function TeamMgmtPage() {
     return matchesSearch && matchesDept;
   });
 
-  const handleToggleClock = () => {
-    if (clockedIn) {
-      setClockedIn(false);
-      addNotification('Clocked Out', 'Your work shift has been logged successfully.', 'info');
-    } else {
-      setClockedIn(true);
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setClockInTime(timeStr);
-      addNotification('Clocked In', `Attendance marked Present at ${timeStr}.`, 'success');
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+    if (!newMember.name || !newMember.email || !newMember.password) return;
+    setSubmittingMember(true);
+    try {
+      const skillsArray = typeof newMember.skills === 'string'
+        ? newMember.skills.split(',').map(s => s.trim()).filter(Boolean)
+        : (newMember.skills || []);
+
+      const { res, data } = await apiFetch('/auth/create-employee', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newMember.name,
+          email: newMember.email,
+          password: newMember.password,
+          department: newMember.department,
+          designation: newMember.title,
+          role: newMember.role,
+          skills: skillsArray
+        })
+      });
+
+      if (res?.ok) {
+        addNotification('Member Added', `${newMember.name} has been successfully added to the team.`, 'success');
+        setShowAddModal(false);
+        setNewMember({
+          name: '',
+          email: '',
+          password: 'Password@123',
+          title: '',
+          department: 'Operations',
+          role: 'EMPLOYEE',
+          salaryLPA: '',
+          joiningDate: new Date().toISOString().split('T')[0],
+          skills: '',
+          avatar: ''
+        });
+        if (refetchData) {
+          await refetchData();
+        }
+      } else {
+        addNotification('Failed to Add Member', data?.message || 'Could not create team member.', 'error');
+      }
+    } catch (err) {
+      addNotification('Error', err.message || 'An unexpected error occurred.', 'error');
+    } finally {
+      setSubmittingMember(false);
     }
   };
 
@@ -173,7 +210,7 @@ export default function TeamMgmtPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header & Clock-in Bar */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
@@ -184,27 +221,16 @@ export default function TeamMgmtPage() {
             Team Directory & HR Portal
           </h1>
           <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            Manage employee competencies, attendance time clocks, leave approvals, and quarterly performance reviews.
+            Manage employee competencies, leave approvals, and quarterly performance reviews.
           </p>
         </div>
-
-        {/* Quick Shift Clock-In Widget */}
-        <div className="flex items-center space-x-3 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="text-right px-2">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Today's Shift</div>
-            <div className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
-              {clockedIn ? `In at ${clockInTime}` : 'Shift Ended'}
-            </div>
-          </div>
+        <div className="flex items-center space-x-3">
           <button
-            onClick={handleToggleClock}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
-              clockedIn
-                ? 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
-            }`}
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition-all"
           >
-            {clockedIn ? 'Clock Out' : 'Clock In Now'}
+            <Plus className="w-4 h-4" />
+            <span>Add Team Member</span>
           </button>
         </div>
       </div>
@@ -271,8 +297,7 @@ export default function TeamMgmtPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredMembers.map((member) => {
-              const defaultSkills = ['Full Stack', 'Node.js', 'System Architecture', 'Agile'];
-              const memberSkills = member.skills || defaultSkills;
+              const memberSkills = member.skills || [];
 
               return (
                 <div
@@ -284,7 +309,7 @@ export default function TeamMgmtPage() {
                       <UserAvatar name={member.name} src={member.avatar} size="lg" />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">{member.name}</h3>
-                        <p className="text-xs font-bold text-blue-600 dark:text-blue-400 truncate">{member.title || 'Operations Lead'}</p>
+                        <p className="text-xs font-bold text-blue-600 dark:text-blue-400 truncate">{member.designation || member.title || member.role || 'Team Member'}</p>
                         <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mt-0.5">{member.department}</span>
                       </div>
                     </div>
@@ -305,7 +330,7 @@ export default function TeamMgmtPage() {
                       </div>
                       <div className="flex justify-between items-center text-[11px] pt-1">
                         <span className="text-slate-500 dark:text-slate-400">Salary CTC:</span>
-                        <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{member.salaryLPA || '₹14.5 LPA'}</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{member.salaryLPA ? member.salaryLPA : '—'}</span>
                       </div>
                       <div className="flex justify-between items-center text-[11px]">
                         <span className="text-slate-500 dark:text-slate-400">Privilege Role:</span>
@@ -336,11 +361,13 @@ export default function TeamMgmtPage() {
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">Shift Attendance Logs</h3>
-              <p className="text-xs text-slate-500">Real-time check-in timestamps and workday durations.</p>
+              <p className="text-xs text-slate-500">Recorded attendance and shift status.</p>
             </div>
-            <span className="px-3 py-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full">
-              4 / 5 Present Today
-            </span>
+            {attendanceList.length > 0 && (
+              <span className="px-3 py-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full">
+                {attendanceList.filter(a => a.status === 'Present').length} / {attendanceList.length} Present
+              </span>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -350,7 +377,6 @@ export default function TeamMgmtPage() {
                   <th className="pb-3">Employee</th>
                   <th className="pb-3">Department</th>
                   <th className="pb-3">Clock In</th>
-                  <th className="pb-3">Clock Out</th>
                   <th className="pb-3">Total Shift</th>
                   <th className="pb-3">Status</th>
                 </tr>
@@ -361,7 +387,6 @@ export default function TeamMgmtPage() {
                     <td className="py-3 font-bold text-slate-900 dark:text-slate-100">{item.name}</td>
                     <td className="py-3 text-slate-500">{item.department}</td>
                     <td className="py-3 font-mono">{item.clockIn}</td>
-                    <td className="py-3 font-mono">{item.clockOut}</td>
                     <td className="py-3 font-mono font-bold">{item.hours > 0 ? `${item.hours} hrs` : '-'}</td>
                     <td className="py-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -567,6 +592,129 @@ export default function TeamMgmtPage() {
                   className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md shadow-blue-600/20"
                 >
                   Submit Application
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Add Team Member Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Add New Team Member</h3>
+                <p className="text-xs text-slate-500">Create employee or project manager profile.</p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddMember} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                  placeholder="Full name"
+                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                    placeholder="Work email"
+                    className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Password</label>
+                  <input
+                    type="text"
+                    required
+                    value={newMember.password}
+                    onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                    placeholder="Initial password"
+                    className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Role</label>
+                  <select
+                    value={newMember.role}
+                    onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
+                    className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-bold"
+                  >
+                    <option value="EMPLOYEE">Team Member / Employee</option>
+                    <option value="PROJECT_MANAGER">Project Manager</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Department</label>
+                  <select
+                    value={newMember.department}
+                    onChange={(e) => setNewMember({ ...newMember, department: e.target.value })}
+                    className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-bold"
+                  >
+                    <option value="Operations">Operations</option>
+                    <option value="Executive Management">Executive Management</option>
+                    <option value="Client Deliverables">Client Deliverables</option>
+                    <option value="Financial Operations">Financial Operations</option>
+                    <option value="Product & Design">Product & Design</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Designation / Title</label>
+                <input
+                  type="text"
+                  required
+                  value={newMember.title}
+                  onChange={(e) => setNewMember({ ...newMember, title: e.target.value })}
+                  placeholder="Job title or designation"
+                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">Skills (comma separated)</label>
+                <input
+                  type="text"
+                  value={newMember.skills}
+                  onChange={(e) => setNewMember({ ...newMember, skills: e.target.value })}
+                  placeholder="Comma separated skills"
+                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:underline font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingMember}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-md shadow-blue-600/20"
+                >
+                  {submittingMember ? 'Adding...' : 'Add Member'}
                 </button>
               </div>
             </form>

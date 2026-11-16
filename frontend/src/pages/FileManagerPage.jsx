@@ -127,9 +127,9 @@ export default function FileManagerPage() {
       type: uploadForm.type,
       url: fileUrl,
       permission: uploadForm.permission,
-      uploadedBy: currentUser?.name || 'Operations Lead',
+      uploadedBy: currentUser?.name || 'Administrator',
       versionHistory: [
-        { version: 'v1.0', date: new Date().toISOString().split('T')[0], author: currentUser?.name || 'Operations Lead', note: 'Initial upload from PC' }
+        { version: 'v1.0', date: new Date().toISOString().split('T')[0], author: currentUser?.name || 'Administrator', note: 'Initial upload from PC' }
       ]
     });
 
@@ -313,7 +313,7 @@ export default function FileManagerPage() {
                   value={uploadForm.name}
                   onChange={(e) => setUploadForm({ ...uploadForm, name: e.target.value })}
                   className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700"
-                  placeholder="e.g. Q4_Executive_Financial_Report_2026.pdf"
+                  placeholder="File name"
                 />
               </div>
 

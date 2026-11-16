@@ -4,25 +4,20 @@ import {
   Plus,
   Search,
   Sparkles,
-  Calendar,
-  IndianRupee,
   Users,
-  Paperclip,
   CheckCircle2,
   AlertTriangle,
   Grid,
   List,
   X,
-  ChevronRight,
   Loader2,
-  FileText
+  Paperclip
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { UserAvatar } from '../components/common/UserAvatar';
 import { getApiBaseUrl } from '../services/api';
 
 export default function ProjectMgmtPage() {
-  const { projects, clients, addProject, updateProject, teamMembers } = useData();
+  const { projects, clients, addProject, updateProject, teamMembers, dataLoading } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [viewMode, setViewMode] = useState('grid');
@@ -77,10 +72,10 @@ export default function ProjectMgmtPage() {
     code: '',
     clientId: clients[0]?.id || '',
     description: '',
-    budget: 50000,
+    budget: 0,
     startDate: new Date().toISOString().split('T')[0],
-    endDate: '2026-12-31',
-    priority: 'High',
+    endDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    priority: 'Medium',
     status: 'Planning',
     assignedTeam: [],
     attachments: []
@@ -88,28 +83,30 @@ export default function ProjectMgmtPage() {
 
   const [newAttachmentName, setNewAttachmentName] = useState('');
 
-  const handleCreateProject = (e) => {
+  const handleCreateProject = async (e) => {
     e.preventDefault();
     const client = clients.find(c => c.id === formData.clientId);
-    addProject({
+    const res = await addProject({
       ...formData,
       clientName: client ? client.name : 'Enterprise Client',
       assignedTeam: formData.assignedTeam.length > 0 ? formData.assignedTeam : [teamMembers[0]?.id || 'usr-1']
     });
-    setShowAddModal(false);
-    setFormData({
-      name: '',
-      code: '',
-      clientId: clients[0]?.id || '',
-      description: '',
-      budget: 50000,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: '2026-12-31',
-      priority: 'High',
-      status: 'Planning',
-      assignedTeam: [],
-      attachments: []
-    });
+    if (res && res.success !== false) {
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        code: '',
+        clientId: clients[0]?.id || '',
+        description: '',
+        budget: 50000,
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: '2026-12-31',
+        priority: 'High',
+        status: 'Planning',
+        assignedTeam: [],
+        attachments: []
+      });
+    }
   };
 
   const toggleTeamMember = (memberId) => {
@@ -294,7 +291,7 @@ export default function ProjectMgmtPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium"
-                    placeholder="e.g. Core System Migration"
+                    placeholder="Project name"
                   />
                 </div>
                 <div>
@@ -304,7 +301,7 @@ export default function ProjectMgmtPage() {
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-mono"
-                    placeholder="PRJ-MIG-01"
+                    placeholder="Project code"
                   />
                 </div>
               </div>
@@ -393,7 +390,7 @@ export default function ProjectMgmtPage() {
                     type="text"
                     value={newAttachmentName}
                     onChange={(e) => setNewAttachmentName(e.target.value)}
-                    placeholder="e.g. Scope_Of_Work_v1.pdf"
+                    placeholder="Attachment file name"
                     className="flex-1 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   />
                   <button
@@ -437,9 +434,10 @@ export default function ProjectMgmtPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
+                  disabled={dataLoading}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl disabled:opacity-50"
                 >
-                  Create Project
+                  {dataLoading ? 'Creating in Database...' : 'Create Project'}
                 </button>
               </div>
             </form>

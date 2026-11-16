@@ -13,23 +13,33 @@ export const getApiBaseUrl = () => {
     return '/api';
   }
 
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && envUrl.startsWith('http') && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    const clean = envUrl.replace(/\/+$/, '');
-    return clean.endsWith('/api') ? clean : `${clean}/api`;
+  // Local development on localhost or 127.0.0.1
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1') || envUrl.startsWith('/'))) {
+      const clean = envUrl.replace(/\/+$/, '');
+      return clean.endsWith('/api') ? clean : `${clean}/api`;
+    }
+    return 'http://localhost:5000/api';
   }
 
-  // Local network testing on phone (e.g., http://10.x.x.x:5173)
-  if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
+  // Local network testing on phone / LAN (e.g., http://192.168.x.x:5173 or 10.x.x.x)
+  if (typeof window !== 'undefined' && window.location.hostname) {
     return `http://${window.location.hostname}:5000/api`;
   }
 
-  const raw = envUrl || 'http://localhost:5000/api';
-  const clean = raw.replace(/\/+$/, '');
+  const envUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const clean = envUrl.replace(/\/+$/, '');
   return clean.endsWith('/api') ? clean : `${clean}/api`;
 };
 
 export const getSocketUrl = () => {
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000';
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname.startsWith('10.') || window.location.hostname.startsWith('192.168.'))) {
+    return `http://${window.location.hostname}:5000`;
+  }
   const envSocket = import.meta.env.VITE_SOCKET_URL;
   if (envSocket && !envSocket.includes('localhost') && !envSocket.includes('127.0.0.1')) {
     return envSocket.replace(/\/+$/, '');

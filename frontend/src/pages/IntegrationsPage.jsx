@@ -20,12 +20,12 @@ export default function IntegrationsPage() {
 
   const [activeModal, setActiveModal] = useState(null);
   const [configData, setConfigData] = useState({
-    razorpayKeyId: 'rzp_live_9A8B7C6D5E4F3',
-    razorpaySecret: '••••••••••••••••••••',
-    whatsappPhoneId: '+91 98765 43210',
-    slackWebhook: 'https://hooks.slack.com/services/T00/B00/XXXX',
-    googleAccount: 'operations@workforge.in',
-    zoomAccount: 'meetings@workforge.in'
+    razorpayKeyId: '',
+    razorpaySecret: '',
+    whatsappPhoneId: '',
+    slackWebhook: '',
+    googleAccount: '',
+    zoomAccount: ''
   });
 
   const [integrations, setIntegrations] = useState([
@@ -44,7 +44,7 @@ export default function IntegrationsPage() {
       name: 'WhatsApp Business API',
       category: 'Client Communications',
       description: 'Send automated invoice payment reminders, project status updates, and task alerts directly to clients via WhatsApp.',
-      status: 'Connected',
+      status: 'Disconnected',
       iconBg: 'bg-emerald-600',
       badge: 'Client Outreach',
       isPopular: true
@@ -54,7 +54,7 @@ export default function IntegrationsPage() {
       name: 'Slack Team Workspace',
       category: 'Internal Operations',
       description: 'Stream task updates, time logs, and AI Health audit alerts into your company Slack channels.',
-      status: 'Connected',
+      status: 'Disconnected',
       iconBg: 'bg-purple-600',
       badge: 'Real-Time Sync'
     },
@@ -63,7 +63,7 @@ export default function IntegrationsPage() {
       name: 'Google Calendar',
       category: 'Schedule & Meetings',
       description: 'Sync project milestones, client review deadlines, and team meetings directly to Google Calendar.',
-      status: 'Connected',
+      status: 'Disconnected',
       iconBg: 'bg-amber-600',
       badge: 'Calendar Sync'
     },
@@ -72,7 +72,7 @@ export default function IntegrationsPage() {
       name: 'Gmail & Google Workspace',
       category: 'Email Notifications',
       description: 'Send automated PDF invoices, client welcome emails, and meeting summaries via your corporate Gmail domain.',
-      status: 'Connected',
+      status: 'Disconnected',
       iconBg: 'bg-red-600',
       badge: 'Email Outbound'
     },
@@ -175,9 +175,11 @@ export default function IntegrationsPage() {
     let configPayload = {};
     if (activeModal === 'razorpay') {
       configPayload = {
-        razorpayKeyId: configData.razorpayKeyId,
-        razorpaySecret: configData.razorpaySecret
+        razorpayKeyId: configData.razorpayKeyId
       };
+      if (configData.razorpaySecret && !configData.razorpaySecret.includes('•')) {
+        configPayload.razorpaySecret = configData.razorpaySecret;
+      }
     } else if (activeModal === 'whatsapp') {
       configPayload = {
         whatsappPhoneId: configData.whatsappPhoneId
@@ -314,8 +316,9 @@ export default function IntegrationsPage() {
             <form onSubmit={handleSaveConfig} className="space-y-4 text-xs">
               {activeModal === 'razorpay' && (
                 <>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-xl text-blue-900 dark:text-blue-200 text-xs font-semibold leading-relaxed">
-                    Razorpay enables automated subscription renewals, GST Tax Invoice payments, and instant UPI / NetBanking settlement in INR (₹).
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-xl text-blue-900 dark:text-blue-200 text-xs font-semibold leading-relaxed space-y-1">
+                    <div>Razorpay enables instant UPI (Google Pay, PhonePe, Paytm, CRED), NetBanking, and Card payments in INR (₹).</div>
+                    <div className="text-[11px] text-blue-700 dark:text-blue-300">💡 <strong>Test Mode:</strong> When using test keys (<code className="font-mono">rzp_test_...</code>), use UPI ID <code className="font-mono bg-blue-200/50 dark:bg-blue-800/60 px-1 py-0.5 rounded">success@razorpay</code>. Real mobile UPI apps cannot scan sandbox QR codes.</div>
                   </div>
                   <div>
                     <label className="block font-bold mb-1">Razorpay Key ID</label>
@@ -324,6 +327,7 @@ export default function IntegrationsPage() {
                       required
                       value={configData.razorpayKeyId}
                       onChange={(e) => setConfigData({ ...configData, razorpayKeyId: e.target.value })}
+                      placeholder="rzp_test_... or rzp_live_..."
                       className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 font-mono text-slate-900 dark:text-slate-100"
                     />
                   </div>
@@ -331,9 +335,9 @@ export default function IntegrationsPage() {
                     <label className="block font-bold mb-1">Razorpay Key Secret</label>
                     <input
                       type="password"
-                      required
                       value={configData.razorpaySecret}
                       onChange={(e) => setConfigData({ ...configData, razorpaySecret: e.target.value })}
+                      placeholder="Enter new secret (or leave blank to preserve existing)"
                       className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 font-mono text-slate-900 dark:text-slate-100"
                     />
                   </div>

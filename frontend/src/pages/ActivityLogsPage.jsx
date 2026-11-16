@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Search, Filter, ShieldAlert, Terminal } from 'lucide-react';
+import { ShieldCheck, Search } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export default function ActivityLogsPage() {
